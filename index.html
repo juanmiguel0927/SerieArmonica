@@ -2,584 +2,1067 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Evaluador de Armaduras Adaptativo</title>
-    <!-- Tailwind CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lab. Serie Armónica</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- VexFlow (Notación) -->
-    <script src="https://unpkg.com/vexflow@3.0.9/releases/vexflow-min.js"></script>
-    <!-- Tone.js (Audio) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-    <!-- Chart.js (Gráficos) -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- HTML2PDF (Exportación de reportes) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
     
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+
     <style>
-        body { background-color: #f3f4f6; font-family: 'Inter', sans-serif; }
-        .btn-press { transition: transform 0.1s; }
-        .btn-press:active { transform: scale(0.95); }
-        .confetti { position: absolute; width: 10px; height: 10px; background-color: #f00; z-index: 1000; animation: fall 3s linear forwards; }
-        @keyframes fall { to { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        #history-modal { background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; margin: 0; padding: 0; overflow-x: hidden; transition: background-color 0.3s, color 0.3s; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        .piano-container { display: flex; position: relative; height: 100px; width: 100%; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #cbd5e1; }
+        .white-key { flex: 1; background: #fff; border-right: 1px solid #cbd5e1; position: relative; z-index: 1; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 5px; font-size: 9px; color: #94a3b8; cursor: pointer; transition: background 0.1s, box-shadow 0.1s; user-select: none; -webkit-tap-highlight-color: transparent; touch-action: none; }
+        .white-key:last-child { border-right: none; }
+        .white-key:active, .white-key.active-key { box-shadow: inset 0 2px 5px rgba(0,0,0,0.1); }
+        .black-key { position: absolute; background: #1e293b; border-radius: 0 0 3px 3px; z-index: 2; cursor: pointer; box-shadow: 1px 2px 3px rgba(0,0,0,0.3), inset -1px -1px 2px rgba(255,255,255,0.2); transition: background 0.1s, transform 0.1s; user-select: none; -webkit-tap-highlight-color: transparent; touch-action: none; }
+        .black-key:active, .black-key.active-key { transform: translateY(1px); box-shadow: 0px 1px 1px rgba(0,0,0,0.3); }
+        
+        #score-container svg { display: block; overflow: visible; width: 100%; height: auto; }
+        
+        .layout-grid { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.5rem; height: calc(100vh - 48px - 32px); overflow-y: auto; }
+        
+        @media (min-width: 1024px) {
+            .layout-grid { flex-direction: row; padding: 0.5rem; overflow: hidden; gap: 0.5rem; }
+            .control-panel { width: 280px; flex-shrink: 0; overflow-y: auto; padding-right: 0.25rem; display: flex; flex-direction: column; gap: 0.5rem; }
+            .main-view { flex-grow: 1; width: calc(100% - 280px - 0.5rem); overflow-y: auto; padding-right: 0.25rem; display: flex; flex-direction: column; gap: 0.5rem; }
+        }
+
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .digital-screen { background: #e0e7ff; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); border: 2px solid #c7d2fe; transition: background 0.3s, border-color 0.3s, box-shadow 0.3s; }
+        .lcd-text { font-family: 'JetBrains Mono', monospace; letter-spacing: -0.5px; }
+
+        /* MODO OSCURO GLOBAL SEGURO */
+        html.dark body { background-color: #0f172a; color: #f8fafc; }
+        html.dark .bg-white { background-color: #1e293b !important; border-color: #334155 !important; }
+        html.dark .bg-slate-50 { background-color: #0f172a !important; border-color: #334155 !important; color: #cbd5e1 !important; }
+        html.dark .bg-slate-100 { background-color: #0f172a !important; }
+        html.dark .text-slate-700, html.dark .text-slate-800 { color: #f1f5f9 !important; }
+        html.dark .text-slate-500, html.dark .text-slate-400 { color: #94a3b8 !important; }
+        html.dark .border-slate-200, html.dark .border-slate-100, html.dark .border-b, html.dark .border-t { border-color: #334155 !important; }
+        
+        /* Afinador LCD Dark Mode */
+        html.dark .digital-screen { background: #1e1b4b !important; border-color: #3730a3 !important; }
+        
+        /* Excepciones */
+        html.dark #score-container { background-color: #fdfdf9 !important; border-color: #94a3b8 !important; }
+        html.dark .piano-container { background-color: #fff !important; }
+        html.dark .white-key { background: #fff !important; color: #94a3b8 !important; }
+        html.dark .black-key { background: #1e293b !important; }
     </style>
 </head>
-<body class="flex flex-col min-h-screen text-gray-800 relative">
 
-    <header class="bg-white shadow-sm p-4 sticky top-0 z-10 flex flex-wrap justify-between items-center gap-4">
-        <h1 class="text-xl font-bold text-indigo-700">Teoría Musical Pro</h1>
-        <div class="flex items-center gap-4 text-sm font-semibold flex-wrap">
-            <div class="flex items-center gap-1 text-purple-600" title="Dificultad adaptativa automática">
-                <span>⭐ Nivel:</span> <span id="current-level" class="text-lg font-black">1</span>
-            </div>
-            <div class="flex items-center gap-1 text-orange-500" title="Aciertos consecutivos">
-                <span>🔥 Combo:</span> <span id="streak-counter" class="text-lg">0</span>
-            </div>
-            <div class="flex items-center gap-1 text-green-600">
-                <span>✅ Aciertos:</span> <span id="score-correct" class="text-lg">0</span>
-            </div>
-            <div class="flex items-center gap-1 text-red-600">
-                <span>❌ Errores:</span> <span id="score-incorrect" class="text-lg">0</span>
-            </div>
-            <button id="btn-history" class="bg-blue-100 text-blue-700 px-3 py-1 rounded-md hover:bg-blue-200 btn-press border border-blue-300">📊 Historial</button>
-            <button id="btn-challenge" class="bg-purple-600 text-white px-3 py-1 rounded-md hover:bg-purple-700 btn-press">⏱️ Reto 60s</button>
-            <button id="btn-reset" class="bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 btn-press">↻ Reiniciar</button>
+<body class="flex flex-col h-screen">
+
+    <header class="bg-indigo-900 text-white p-2 shadow-md z-10 shrink-0 flex justify-between items-center h-12 px-3 transition-colors">
+        <div>
+            <h1 class="text-sm md:text-base font-bold leading-tight">Lab. Serie Armónica</h1>
+            <p class="text-[9px] md:text-[10px] text-indigo-200">Exploración visual y auditiva de la física del sonido</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="document.documentElement.classList.toggle('dark')" class="text-indigo-200 hover:text-white text-lg transition" title="Alternar Modo Oscuro">
+                🌓
+            </button>
+            <button onclick="document.getElementById('modal-guia').classList.remove('hidden')" class="bg-indigo-700 hover:bg-indigo-600 text-white text-[10px] md:text-xs px-3 py-1.5 rounded-lg transition shadow-sm font-semibold">
+                ℹ️ Guía y Ayuda
+            </button>
         </div>
     </header>
 
-    <main class="flex-grow container mx-auto p-4 max-w-4xl flex flex-col gap-6">
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="bg-white p-4 rounded-xl shadow-sm col-span-2 flex flex-col md:flex-row gap-4 items-center justify-center">
-                <label class="font-semibold text-sm">Clave para entrenar:</label>
-                <select id="clef-mode" class="border rounded px-2 py-1 text-sm bg-gray-50 outline-none">
-                    <option value="random">Aleatorio (Sol y Fa)</option>
-                    <option value="treble">Solo Clave de Sol</option>
-                    <option value="bass">Solo Clave de Fa</option>
-                </select>
-                <div class="text-xs text-gray-500 italic md:ml-4 text-center">La dificultad (cantidad de alteraciones) aumenta sola con tu Combo.</div>
-            </div>
-            
-            <div class="bg-red-50 p-4 rounded-xl shadow-sm border border-red-200 flex flex-col justify-center">
-                <h3 class="text-xs font-bold text-red-800 uppercase mb-1">Tus debilidades (SRS):</h3>
-                <div id="weakness-list" class="flex gap-2 overflow-x-auto scrollbar-hide text-sm font-semibold text-red-600">
-                    <span class="text-gray-400 font-normal italic">Ninguna detectada aún</span>
+    <div class="layout-grid">
+        <aside class="control-panel pb-2">
+            <!-- 1. Generador -->
+            <div class="bg-white p-3 rounded-lg shadow-sm border border-slate-200 transition-colors">
+                <div class="flex justify-between items-center mb-2 border-b pb-1">
+                    <h3 class="text-[10px] font-bold text-slate-700 uppercase">Generador de Series</h3>
                 </div>
-            </div>
-        </div>
-
-        <div class="bg-white p-6 rounded-xl shadow-sm flex flex-col items-center relative overflow-hidden" id="staff-container">
-            <h2 class="text-lg font-bold mb-2 text-gray-700" id="main-instruction">Identifica la Tonalidad MAYOR</h2>
-            <div id="vexflow-canvas" class="w-full max-w-md bg-white border border-gray-100 rounded-lg flex justify-center py-4 min-h-[160px]"></div>
-            <div id="timer-display" class="hidden absolute top-4 right-4 text-2xl font-black text-purple-600">60</div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            <div id="phase-1-panel" class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-indigo-400 flex flex-col">
-                <h3 class="font-bold text-lg mb-4 text-indigo-900">1. Identifica la Tonalidad</h3>
-                <select id="key-select" class="w-full border-2 border-indigo-200 rounded-lg p-3 text-lg mb-4 bg-indigo-50 outline-none focus:border-indigo-500"></select>
-                <button id="btn-check-key" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 btn-press mt-auto">Comprobar Tonalidad (Enter)</button>
-                <div id="msg-phase1" class="mt-4 text-center font-semibold text-sm hidden p-2 rounded"></div>
-            </div>
-
-            <div id="phase-2-panel" class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-green-400 opacity-50 pointer-events-none transition-opacity">
-                <h3 class="font-bold text-lg mb-4 text-green-900">2. Pregunta de Escala</h3>
-                <div id="scale-question" class="bg-green-50 p-3 rounded-lg text-center font-medium mb-4 min-h-[3rem] flex items-center justify-center">
-                    Completa la fase 1 primero.
-                </div>
-                
-                <div class="flex justify-center gap-1 sm:gap-2 mb-3">
-                    <button class="note-btn border-2 border-gray-300 rounded px-2 sm:px-3 py-2 font-bold hover:bg-gray-100 btn-press text-sm sm:text-base" data-val="Do">Do</button>
-                    <button class="note-btn border-2 border-gray-300 rounded px-2 sm:px-3 py-2 font-bold hover:bg-gray-100 btn-press text-sm sm:text-base" data-val="Re">Re</button>
-                    <button class="note-btn border-2 border-gray-300 rounded px-2 sm:px-3 py-2 font-bold hover:bg-gray-100 btn-press text-sm sm:text-base" data-val="Mi">Mi</button>
-                    <button class="note-btn border-2 border-gray-300 rounded px-2 sm:px-3 py-2 font-bold hover:bg-gray-100 btn-press text-sm sm:text-base" data-val="Fa">Fa</button>
-                    <button class="note-btn border-2 border-gray-300 rounded px-2 sm:px-3 py-2 font-bold hover:bg-gray-100 btn-press text-sm sm:text-base" data-val="Sol">Sol</button>
-                    <button class="note-btn border-2 border-gray-300 rounded px-2 sm:px-3 py-2 font-bold hover:bg-gray-100 btn-press text-sm sm:text-base" data-val="La">La</button>
-                    <button class="note-btn border-2 border-gray-300 rounded px-2 sm:px-3 py-2 font-bold hover:bg-gray-100 btn-press text-sm sm:text-base" data-val="Si">Si</button>
-                </div>
-                
-                <div class="flex justify-center gap-1 sm:gap-2 mb-4">
-                    <button class="acc-btn border-2 border-gray-300 rounded px-2 sm:px-4 py-2 font-bold hover:bg-gray-100 btn-press text-sm" data-val="b">b ⬅️</button>
-                    <button class="acc-btn border-2 border-gray-300 rounded px-2 sm:px-4 py-2 font-bold hover:bg-gray-100 btn-press text-sm" data-val="natural">♮ ⬇️</button>
-                    <button class="acc-btn border-2 border-gray-300 rounded px-2 sm:px-4 py-2 font-bold hover:bg-gray-100 btn-press text-sm" data-val="#"># ➡️</button>
-                </div>
-
-                <div class="flex items-center gap-2">
-                    <div id="current-answer" class="flex-grow bg-yellow-50 border border-yellow-200 text-center font-bold text-xl py-2 rounded">_</div>
-                    <button id="btn-check-scale" class="bg-green-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-green-700 btn-press">Verificar</button>
-                </div>
-                <div id="msg-phase2" class="mt-4 text-center font-semibold text-sm hidden p-2 rounded"></div>
-            </div>
-        </div>
-        
-        <div class="text-center text-xs text-gray-400 mt-2 pb-4">
-            Atajos PC: Números <kbd class="bg-gray-200 px-1 rounded text-gray-700">1-7</kbd> (notas). Flechas <kbd class="bg-gray-200 px-1 rounded text-gray-700">← ↓ →</kbd> (alteraciones). <kbd class="bg-gray-200 px-1 rounded text-gray-700">Enter</kbd> (verificar).
-        </div>
-    </main>
-
-    <!-- MODAL DE HISTORIAL Y EXPORTACIÓN -->
-    <div id="history-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
-            <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-                <h3 class="font-bold text-xl text-gray-800">Análisis de Sesión</h3>
-                <div class="flex gap-4 items-center">
-                    <button id="btn-export-pdf" class="bg-red-600 text-white px-4 py-1.5 rounded text-sm font-bold hover:bg-red-700 btn-press shadow-sm">📥 Exportar a PDF</button>
-                    <button id="btn-close-modal" class="text-gray-500 hover:text-gray-800 font-bold text-3xl leading-none">&times;</button>
-                </div>
-            </div>
-            
-            <div id="pdf-content" class="flex-grow overflow-y-auto p-6 bg-white">
-                <div class="mb-6 border-b pb-4">
-                    <h2 class="text-2xl font-black text-indigo-700">Reporte de Entrenamiento Musical</h2>
-                    <p class="text-sm text-gray-500 font-medium" id="report-timestamp"></p>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="lg:col-span-1 flex flex-col items-center justify-start border-b lg:border-b-0 lg:border-r border-gray-200 pb-6 lg:pb-0">
-                        <h4 class="font-semibold text-gray-800 mb-4 text-center uppercase tracking-wider text-sm">Precisión</h4>
-                        <div class="w-48 h-48 relative">
-                            <canvas id="history-chart"></canvas>
-                        </div>
-                        <div class="mt-6 text-center w-full grid grid-cols-2 gap-2 text-sm">
-                            <div class="bg-green-50 p-2 rounded border border-green-100">
-                                <span class="block text-gray-500 text-xs">Aciertos</span>
-                                <span id="stat-c" class="font-bold text-green-700 text-lg">0</span>
-                            </div>
-                            <div class="bg-red-50 p-2 rounded border border-red-100">
-                                <span class="block text-gray-500 text-xs">Errores</span>
-                                <span id="stat-i" class="font-bold text-red-700 text-lg">0</span>
-                            </div>
-                        </div>
+                <div class="grid grid-cols-3 gap-2 mb-2">
+                    <div class="col-span-1">
+                        <label for="base-note" class="block text-[8px] text-slate-500 font-bold uppercase mb-1 cursor-pointer">Nota</label>
+                        <select id="base-note" class="w-full border rounded p-1 text-xs bg-slate-50 font-semibold outline-none">
+                            <option value="C" selected>C / Do</option><option value="C#">C# / Db</option><option value="D">D / Re</option>
+                            <option value="D#">D# / Eb</option><option value="E">E / Mi</option><option value="F">F / Fa</option>
+                            <option value="F#">F# / Gb</option><option value="G">G / Sol</option><option value="G#">G# / Ab</option>
+                            <option value="A">A / La</option><option value="A#">A# / Bb</option><option value="B">B / Si</option>
+                        </select>
                     </div>
+                    <div class="col-span-1">
+                        <label for="base-octave" class="block text-[8px] text-slate-500 font-bold uppercase mb-1 cursor-pointer">Octava</label>
+                        <select id="base-octave" class="w-full border rounded p-1 text-xs bg-slate-50 outline-none">
+                            <option value="1">1</option><option value="2" selected>2</option>
+                            <option value="3">3</option><option value="4">4</option>
+                        </select>
+                    </div>
+                    <div class="col-span-1">
+                        <label for="num-harmonics" class="block text-[8px] text-slate-500 font-bold uppercase mb-1 cursor-pointer" title="Armónicos Iniciales">Parciales</label>
+                        <input type="number" id="num-harmonics" value="16" min="2" max="64" class="w-full border rounded p-1 text-xs text-center font-bold outline-none bg-slate-50 text-slate-800">
+                    </div>
+                </div>
+                <button onclick="addSeries()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 rounded text-xs transition shadow-sm">
+                    ＋ Añadir Serie
+                </button>
+            </div>
 
-                    <div class="lg:col-span-2">
-                        <h4 class="font-semibold text-gray-800 mb-4 uppercase tracking-wider text-sm">Desglose Cronológico</h4>
-                        <div id="table-scroll-container" class="overflow-x-auto max-h-96 border border-gray-200 rounded">
-                            <table class="w-full text-sm text-left">
-                                <thead class="text-xs text-gray-700 uppercase bg-gray-100 sticky top-0 shadow-sm">
-                                    <tr>
-                                        <th class="px-4 py-3">Hora</th>
-                                        <th class="px-4 py-3">Pregunta</th>
-                                        <th class="px-4 py-3">Respuesta</th>
-                                        <th class="px-4 py-3">Estado</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="history-tbody" class="divide-y divide-gray-100">
-                                </tbody>
-                            </table>
+            <!-- 2. Opciones de Audio -->
+            <div class="bg-white p-3 rounded-lg shadow-sm border border-slate-200 transition-colors">
+                <h3 class="text-[10px] font-bold text-slate-700 uppercase mb-2 border-b pb-1">Opciones de Audio</h3>
+                
+                <div class="grid grid-cols-2 gap-2 mb-2">
+                    <div>
+                        <label class="block text-[8px] text-slate-500 font-bold uppercase mb-1">Onda</label>
+                        <select id="waveform" class="w-full border rounded p-1 text-xs bg-slate-50 outline-none">
+                            <option value="sine">Senoidal</option><option value="triangle">Triangular</option>
+                            <option value="sawtooth">Sierra</option><option value="square">Cuadrada</option>
+                        </select>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-[8px] text-slate-500 font-bold uppercase">BPM</label>
+                            <span class="text-[8px] font-bold text-blue-600" id="bpm-display">120</span>
+                        </div>
+                        <input type="range" id="bpm-slider" min="40" max="240" value="120" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                    </div>
+                </div>
+
+                <div class="mb-3 pt-1">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-[8px] text-slate-500 font-bold uppercase">Volumen General</label>
+                        <span class="text-[8px] font-bold text-blue-600" id="vol-display">80%</span>
+                    </div>
+                    <input type="range" id="master-volume" min="0" max="100" value="80" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                </div>
+                
+                <div class="mb-3 pt-2 border-t border-slate-100">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-[8px] text-slate-500 font-bold uppercase">Desfase (Canon)</label>
+                        <span class="text-[8px] font-bold text-emerald-600"><span id="offset-val">0</span> Tiempos</span>
+                    </div>
+                    <input type="range" id="play-offset" min="0" max="8" step="0.5" value="0" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-500">
+                </div>
+
+                <div class="flex gap-2">
+                    <button onclick="playAllSeries()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 rounded text-xs transition shadow-sm">▶ Reproducir Todas</button>
+                    <button onclick="clearAllSeries()" class="bg-slate-50 border hover:bg-rose-50 text-rose-500 font-bold py-1.5 px-3 rounded text-[10px] transition">Limpiar</button>
+                </div>
+            </div>
+
+            <!-- 3. Afinador Digital LCD -->
+            <div class="bg-white p-3 rounded-lg shadow-sm border border-slate-200 mt-auto transition-colors">
+                <div class="flex justify-between items-center mb-2 border-b pb-1">
+                    <h3 class="text-[10px] font-bold text-slate-700 uppercase">Afinador de Precisión</h3>
+                </div>
+                
+                <div class="flex bg-slate-100 rounded p-0.5 mb-2 border">
+                    <button id="tuner-src-mic" class="flex-1 text-[9px] py-1 text-center rounded font-bold bg-white shadow-sm text-slate-800 transition" onclick="setTunerSource('mic')">🎤 Micrófono</button>
+                    <button id="tuner-src-synth" class="flex-1 text-[9px] py-1 text-center rounded font-bold text-slate-500 transition" onclick="setTunerSource('synth')">🎹 Sintetizador</button>
+                </div>
+
+                <!-- Pantalla Digital LCD -->
+                <div class="digital-screen rounded p-3 mb-2 flex flex-col items-center relative overflow-hidden">
+                    <div id="tuner-hz" class="lcd-text text-3xl font-bold text-slate-400 tabular-nums">--.-</div>
+                    <div class="text-[8px] text-indigo-400 font-bold uppercase mt-0.5 mb-1">Hercios (Hz)</div>
+                    
+                    <div class="w-full flex justify-between items-end px-2 bg-indigo-900 rounded py-1 shadow-inner">
+                        <div id="tuner-note" class="lcd-text text-xl font-bold text-white">--</div>
+                        <div class="flex flex-col items-end">
+                            <div id="tuner-cents" class="lcd-text text-xs text-indigo-200">+0.0c</div>
+                            <div id="tuner-microtone" class="lcd-text text-[8px] text-indigo-300 font-bold leading-none mt-0.5">-</div>
                         </div>
                     </div>
                 </div>
+
+                <button id="tuner-toggle" onclick="toggleTuner()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1.5 rounded text-xs transition shadow-sm">
+                    Encender Afinador
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-view">
+            <!-- Piano -->
+            <div class="bg-white p-2 rounded-lg shadow-sm border border-slate-200 shrink-0 transition-colors">
+                <div class="flex justify-between items-center mb-1 px-1">
+                    <h2 class="text-[9px] font-bold text-slate-500 uppercase">Teclado de Referencia</h2>
+                    <span class="text-[8px] text-slate-400 font-mono">C2 - C6</span>
+                </div>
+                <div id="piano-container" class="piano-container"></div>
+            </div>
+
+            <!-- Partitura -->
+            <div class="bg-white p-2 rounded-lg shadow-sm border border-slate-200 flex flex-col shrink-0 transition-colors">
+                <div class="flex justify-between items-center mb-1 px-1">
+                    <h2 class="text-[9px] font-bold text-slate-500 uppercase">Pentagrama</h2>
+                    <select id="score-view-mode" class="border rounded text-[9px] p-0.5 bg-slate-50 outline-none" onchange="renderVexFlow()">
+                        <option value="horizontal">Arpegio (Secuencial)</option>
+                        <option value="vertical">Acordes (Apilado)</option>
+                    </select>
+                </div>
+                <div id="score-container" class="w-full bg-[#fdfdf9] rounded border flex justify-center items-center min-h-[200px] max-h-[280px] overflow-hidden">
+                    <!-- VexFlow SVG Render Zone -->
+                </div>
+            </div>
+
+            <!-- Contenedor Tarjetas -->
+            <div id="series-container" class="flex-1 overflow-y-auto pb-4 flex flex-col gap-2"></div>
+        </main>
+    </div>
+
+    <!-- Creador / Créditos -->
+    <footer class="bg-slate-100 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 text-center py-2 text-[10px] text-slate-500 dark:text-slate-400 font-medium shrink-0 transition-colors z-10">
+        Desarrollado por Juan Miguel Rios Redondo
+    </footer>
+
+    <!-- Modal Guía Mejorado -->
+    <div id="modal-guia" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden transition-colors">
+            <div class="p-4 bg-indigo-900 border-b border-indigo-800 flex justify-between items-center shrink-0">
+                <h2 class="text-lg font-bold text-white">Guía Completa: Física Acústica y Manual de Uso</h2>
+                <button onclick="document.getElementById('modal-guia').classList.add('hidden')" class="text-indigo-200 hover:text-white text-3xl leading-none">&times;</button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto text-sm text-slate-700 dark:text-slate-300 space-y-8 flex-1">
+                <section>
+                    <h3 class="text-lg font-bold text-indigo-700 dark:text-indigo-400 border-b-2 border-indigo-100 dark:border-indigo-900/50 pb-2 mb-4 flex items-center gap-2">
+                        <span>🌊</span> 1. La Física del Sonido y los Armónicos
+                    </h3>
+                    <div class="space-y-3">
+                        <p><strong>¿Qué es el Sonido?</strong> El sonido viaja a través del aire mediante ondas de compresión y descompresión. Cuando tocamos la cuerda de una guitarra, esta perturba el aire creando frecuencias que nuestro tímpano interpreta como notas.</p>
+                        <p><strong>El ADN del Timbre (La Serie Armónica):</strong> En la naturaleza, ningún instrumento acústico emite un sonido "puro" (solo una frecuencia). Cuando tocas un <strong>Do (f1)</strong>, la cuerda vibra en toda su longitud. Sin embargo, las leyes de la física dictan que también vibra simultáneamente dividida en 2 mitades, en 3 tercios, en 4 cuartos... y así hasta el infinito.</p>
+                        <div class="bg-indigo-50 dark:bg-indigo-900/30 p-3 rounded-lg border border-indigo-100 dark:border-indigo-800 text-xs text-slate-800 dark:text-indigo-100 transition-colors">
+                            <ul class="list-disc pl-5 space-y-1">
+                                <li><strong>Parcial 1 (Fundamental):</strong> Determina la nota que tu cerebro percibe (ej. Do).</li>
+                                <li><strong>Parciales Superiores (Armónicos):</strong> Son notas progresivamente más agudas y de menor volumen. Su suma crea el "timbre" que nos permite distinguir un violín de un clarinete, aunque ambos toquen la misma nota.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3 class="text-lg font-bold text-indigo-700 dark:text-indigo-400 border-b-2 border-indigo-100 dark:border-indigo-900/50 pb-2 mb-4 flex items-center gap-2">
+                        <span>⚖️</span> 2. El Choque: Naturaleza vs. Piano (Temperamento Igual)
+                    </h3>
+                    <div class="space-y-3">
+                        <p>Si analizas las tarjetas de la aplicación, notarás que algunos armónicos muestran números en rojo, como <span class="text-rose-500 font-bold">-31.2 c</span> (cents).</p>
+                        <p><strong>¿Qué significan los Cents?</strong> Un "Cent" es la centésima parte de un semitono. Sirve para medir microscópicamente la afinación.</p>
+                        <p><strong>¿Por qué están desafinados?</strong> Hace siglos, los músicos se toparon con un problema matemático: afinar los instrumentos guiándose por los puros armónicos de la naturaleza impedía cambiar de tonalidad (escala) sin que sonara horrible. La solución fue inventar el <strong>Temperamento Igual</strong>, que es el estándar actual.</p>
+                        <p>En el Temperamento Igual, <em>todas las notas del piano se desafinan deliberadamente un poquito</em> para engañar al oído humano y permitir tocar en cualquier escala. Sin embargo, la naturaleza no miente: el armónico 5º, 7º y 11º revelan siempre grandes discrepancias entre la matemática pura acústica y la afinación de nuestro piano occidental.</p>
+                    </div>
+                </section>
+
+                <section>
+                    <h3 class="text-lg font-bold text-indigo-700 dark:text-indigo-400 border-b-2 border-indigo-100 dark:border-indigo-900/50 pb-2 mb-4 flex items-center gap-2">
+                        <span>🔬</span> 3. Microtonalismo: 1/4, 1/8, 1/16 y 1/32 de Tono
+                    </h3>
+                    <div class="space-y-3">
+                        <p>El piano occidental divide la música en <strong>semitonos</strong> (la distancia entre dos teclas contiguas). Un semitono equivale exactamente a <strong>100 Cents</strong>. Sin embargo, la serie armónica es un fenómeno natural y produce frecuencias que caen en las "grietas" entre las teclas del piano. A estas distancias se les llama intervalos <strong>microtonales</strong>.</p>
+                        <p>El laboratorio traduce instantáneamente esta desviación acústica en fracciones exactas de tono:</p>
+                        <div class="bg-indigo-50 dark:bg-indigo-900/30 p-3 rounded-lg border border-indigo-100 dark:border-indigo-800 text-xs text-slate-800 dark:text-indigo-100 grid grid-cols-1 md:grid-cols-2 gap-2 transition-colors">
+                            <div class="flex justify-between border-b border-indigo-200 dark:border-indigo-800/50 pb-1"><strong>1 Semitono</strong> <span>100 cents (1/2 Tono)</span></div>
+                            <div class="flex justify-between border-b border-indigo-200 dark:border-indigo-800/50 pb-1"><strong>Cuarto de tono</strong> <span>50 cents (1/4 Tono)</span></div>
+                            <div class="flex justify-between border-b border-indigo-200 dark:border-indigo-800/50 pb-1"><strong>Octavo de tono</strong> <span>25 cents (1/8 Tono)</span></div>
+                            <div class="flex justify-between border-b border-indigo-200 dark:border-indigo-800/50 pb-1"><strong>Dieciseisavo de tono</strong> <span>12.5 cents (1/16 Tono)</span></div>
+                            <div class="flex justify-between"><strong>Treintaidosavo de tono</strong> <span>6.25 cents (1/32 Tono)</span></div>
+                        </div>
+                        <div class="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg border border-blue-100 dark:border-blue-800 text-xs text-slate-800 dark:text-blue-100 transition-colors">
+                            <p><strong>Ejemplo Acústico:</strong> El armónico 11º casi siempre arrojará una desviación de <strong>-49 cents</strong>. Matemáticamente, esto significa que la naturaleza está pidiendo casi a la perfección un <em>1/4 de tono</em> más grave que la nota que marca el piano. El afinador y las tarjetas te mostrarán bajo los "cents" en qué mundo microtonal estás.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3 class="text-lg font-bold text-indigo-700 dark:text-indigo-400 border-b-2 border-indigo-100 dark:border-indigo-900/50 pb-2 mb-4 flex items-center gap-2">
+                        <span>🕹️</span> 4. Manual de Uso del Laboratorio
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-slate-50 dark:bg-slate-700/50 border dark:border-slate-600 p-4 rounded-lg transition-colors">
+                            <h4 class="font-bold text-slate-800 dark:text-slate-100 mb-2">Generador de Series</h4>
+                            <p class="text-xs mb-2">Elige la Nota, la Octava y cuántos Parciales calcular. Puedes agregar múltiples series de notas distintas para ver visualmente cómo se entrelazan o chocan sus frecuencias microtonales.</p>
+                        </div>
+                        
+                        <div class="bg-slate-50 dark:bg-slate-700/50 border dark:border-slate-600 p-4 rounded-lg transition-colors">
+                            <h4 class="font-bold text-slate-800 dark:text-slate-100 mb-2">Interacción Cromática</h4>
+                            <p class="text-xs mb-2">Cada serie obtiene un color único. Toca las tarjetas o el Piano. Si esa nota pertenece a tus series activas, verás iluminarse instantáneamente tanto la tecla como la cabeza exacta de la nota en el Pentagrama.</p>
+                        </div>
+
+                        <div class="bg-slate-50 dark:bg-slate-700/50 border dark:border-slate-600 p-4 rounded-lg transition-colors">
+                            <h4 class="font-bold text-slate-800 dark:text-slate-100 mb-2">Motor de Canon (Desfase)</h4>
+                            <p class="text-xs mb-2">Si configuras el <strong>Desfase</strong> mayor a 0 y presionas <em>Reproducir Todas</em>, las series iniciarán escalonadamente. Si varias series coinciden en la misma nota del pentagrama a la vez, el motor SVG creará un gradiente radiante combinando todos los colores involucrados en tiempo real.</p>
+                        </div>
+
+                        <div class="bg-slate-50 dark:bg-slate-700/50 border dark:border-slate-600 p-4 rounded-lg transition-colors">
+                            <h4 class="font-bold text-slate-800 dark:text-slate-100 mb-2">Afinador Histerético YIN</h4>
+                            <p class="text-xs mb-2">Usa el modo <strong>Micrófono</strong>, canta e intenta igualar un armónico "rojo". El algoritmo <em>Median Filter</em> ignora saltos de ruido para darte una aguja hiper-estable que te dirá exactamente a qué fracción microtonal estás cantando.</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+            
+            <div class="p-4 bg-slate-100 dark:bg-slate-900 border-t dark:border-slate-800 flex justify-end shrink-0 transition-colors">
+                <button onclick="document.getElementById('modal-guia').classList.add('hidden')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded shadow transition">
+                    Entendido, ¡A Explorar!
+                </button>
             </div>
         </div>
     </div>
 
-    <footer class="bg-gray-900 text-center text-gray-400 py-4 mt-auto text-sm">
-        <p class="font-semibold text-gray-300">Créditos: Juan Miguel Rios Redondo</p>
-    </footer>
-
     <script>
         const VF = Vex.Flow;
-        const keys = [
-            { id: "C",  major: "Do Mayor", minor: "La menor", acc: 0, type: "none" },
-            { id: "G",  major: "Sol Mayor", minor: "Mi menor", acc: 1, type: "sharp" },
-            { id: "D",  major: "Re Mayor", minor: "Si menor", acc: 2, type: "sharp" },
-            { id: "A",  major: "La Mayor", minor: "Fa# menor", acc: 3, type: "sharp" },
-            { id: "E",  major: "Mi Mayor", minor: "Do# menor", acc: 4, type: "sharp" },
-            { id: "B",  major: "Si Mayor", minor: "Sol# menor", acc: 5, type: "sharp" },
-            { id: "F#", major: "Fa# Mayor", minor: "Re# menor", acc: 6, type: "sharp" },
-            { id: "C#", major: "Do# Mayor", minor: "La# menor", acc: 7, type: "sharp" },
-            { id: "F",  major: "Fa Mayor", minor: "Re menor", acc: 1, type: "flat" },
-            { id: "Bb", major: "Sib Mayor", minor: "Sol menor", acc: 2, type: "flat" },
-            { id: "Eb", major: "Mib Mayor", minor: "Do menor", acc: 3, type: "flat" },
-            { id: "Ab", major: "Lab Mayor", minor: "Fa menor", acc: 4, type: "flat" },
-            { id: "Db", major: "Reb Mayor", minor: "Sib menor", acc: 5, type: "flat" },
-            { id: "Gb", major: "Solb Mayor", minor: "Mib menor", acc: 6, type: "flat" },
-            { id: "Cb", major: "Dob Mayor", minor: "Lab menor", acc: 7, type: "flat" }
-        ];
+        const A4_FREQ = 440;
+        let activeSeries = [];
+        let synth, masterGain, audioContext;
+        let seriesIdCounter = 0;
+        
+        // Variables para el Timbre Perfecto
+        let chimeSynth;
+        let isPerfectTuning = false;
+        let lastChimeTime = 0;
+        
+        const seriesColors = ['#ec4899', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4'];
+        const baseFrequencies = { 'C': 16.35, 'C#': 17.32, 'D': 18.35, 'D#': 19.45, 'E': 20.60, 'F': 21.83, 'F#': 23.12, 'G': 24.50, 'G#': 25.96, 'A': 27.50, 'A#': 29.14, 'B': 30.87 };
+        const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
-        const scalesData = {
-            "Do Mayor": ["Do", "Re", "Mi", "Fa", "Sol", "La", "Si"], "Sol Mayor": ["Sol", "La", "Si", "Do", "Re", "Mi", "Fa#"],
-            "Re Mayor": ["Re", "Mi", "Fa#", "Sol", "La", "Si", "Do#"], "La Mayor": ["La", "Si", "Do#", "Re", "Mi", "Fa#", "Sol#"],
-            "Mi Mayor": ["Mi", "Fa#", "Sol#", "La", "Si", "Do#", "Re#"], "Si Mayor": ["Si", "Do#", "Re#", "Mi", "Fa#", "Sol#", "La#"],
-            "Fa# Mayor": ["Fa#", "Sol#", "La#", "Si", "Do#", "Re#", "Mi#"], "Do# Mayor": ["Do#", "Re#", "Mi#", "Fa#", "Sol#", "La#", "Si#"],
-            "Fa Mayor": ["Fa", "Sol", "La", "Sib", "Do", "Re", "Mi"], "Sib Mayor": ["Sib", "Do", "Re", "Mib", "Fa", "Sol", "La"],
-            "Mib Mayor": ["Mib", "Fa", "Sol", "Lab", "Sib", "Do", "Re"], "Lab Mayor": ["Lab", "Sib", "Do", "Reb", "Mib", "Fa", "Sol"],
-            "Reb Mayor": ["Reb", "Mib", "Fa", "Solb", "Lab", "Sib", "Do"], "Solb Mayor": ["Solb", "Lab", "Sib", "Dob", "Reb", "Mib", "Fa"],
-            "Dob Mayor": ["Dob", "Reb", "Mib", "Fab", "Solb", "Lab", "Sib"], "La menor": ["La", "Si", "Do", "Re", "Mi", "Fa", "Sol"],
-            "Mi menor": ["Mi", "Fa#", "Sol", "La", "Si", "Do", "Re"], "Si menor": ["Si", "Do#", "Re", "Mi", "Fa#", "Sol", "La"],
-            "Fa# menor": ["Fa#", "Sol#", "La", "Si", "Do#", "Re", "Mi"], "Do# menor": ["Do#", "Re#", "Mi", "Fa#", "Sol#", "La", "Si"],
-            "Sol# menor": ["Sol#", "La#", "Si", "Do#", "Re#", "Mi", "Fa#"], "Re# menor": ["Re#", "Mi#", "Fa#", "Sol#", "La#", "Si", "Do#"],
-            "La# menor": ["La#", "Si#", "Do#", "Re#", "Mi#", "Fa#", "Sol#"], "Re menor": ["Re", "Mi", "Fa", "Sol", "La", "Sib", "Do"],
-            "Sol menor": ["Sol", "La", "Sib", "Do", "Re", "Mib", "Fa"], "Do menor": ["Do", "Re", "Mib", "Fa", "Sol", "Lab", "Sib"],
-            "Fa menor": ["Fa", "Sol", "Lab", "Sib", "Do", "Reb", "Mib"], "Sib menor": ["Sib", "Do", "Reb", "Mib", "Fa", "Solb", "Lab"],
-            "Mib menor": ["Mib", "Fa", "Solb", "Lab", "Sib", "Dob", "Reb"], "Lab menor": ["Lab", "Sib", "Dob", "Reb", "Mib", "Fab", "Solb"]
-        };
+        // Mapa Geométrico Global para VexFlow
+        window.vfNoteMap = {}; 
+        window.activeVisuals = new Map(); 
+        let animationFrameId = null;
 
-        const degrees = ["1ra (Tónica)", "2da", "3ra", "4ta", "5ta", "6ta", "7ma (Sensible)"];
-        const toneMap = {
-            "Do": "C4", "Do#": "C#4", "Reb": "Db4", "Re": "D4", "Re#": "D#4", "Mib": "Eb4", "Mi": "E4", "Mi#": "F4", "Fab": "E4", 
-            "Fa": "F4", "Fa#": "F#4", "Solb": "Gb4", "Sol": "G4", "Sol#": "G#4", "Lab": "Ab4", "La": "A4", "La#": "A#4", "Sib": "Bb4", "Si": "B4", "Si#": "C5", "Dob": "B3"
-        };
-        const stavesMap = { "Do": "c/4", "Re": "d/4", "Mi": "e/4", "Fa": "f/4", "Sol": "g/4", "La": "a/4", "Si": "b/4" };
-
-        let weightsTracker = {};
-        function getWeightedRandomExercise(availableKeys) {
-            let pool = []; let totalWeight = 0;
-            availableKeys.forEach(k => {
-                let idMaj = k.id + "_major"; let idMin = k.id + "_minor";
-                if (!weightsTracker[idMaj]) weightsTracker[idMaj] = { obj: k, mode: 'major', weight: 1, name: k.major };
-                if (!weightsTracker[idMin]) weightsTracker[idMin] = { obj: k, mode: 'minor', weight: 1, name: k.minor };
-                pool.push(weightsTracker[idMaj], weightsTracker[idMin]);
-                totalWeight += weightsTracker[idMaj].weight + weightsTracker[idMin].weight;
-            });
-            let randomTarget = Math.random() * totalWeight; let currentSum = 0;
-            for (let item of pool) { currentSum += item.weight; if (randomTarget <= currentSum) return item; }
-            return pool[0]; 
+        function getFrequency(note, octave) { return baseFrequencies[note] * Math.pow(2, octave); }
+        function frequencyToMidi(freq) { return 69 + 12 * Math.log2(freq / A4_FREQ); }
+        function midiToNoteString(midi) {
+            const num = Math.round(midi);
+            const octave = Math.floor(num / 12) - 1;
+            return { name: noteNames[num % 12], octave: octave, fullName: `${noteNames[num % 12]}${octave}`, midiNum: num };
         }
 
-        function reportErrorToTracker(keyId, mode) {
-            let id = keyId + "_" + mode;
-            if (weightsTracker[id]) { weightsTracker[id].weight += 3; updateWeaknessUI(); }
+        function getMicrotonalLabel(cents) {
+            const abs = Math.abs(cents);
+            if (abs < 3.125) return "Exacto";
+            let label = "";
+            if (abs >= 3.125 && abs < 9.375) label = "1/32 tono";
+            else if (abs >= 9.375 && abs < 18.75) label = "1/16 tono";
+            else if (abs >= 18.75 && abs < 37.5) label = "1/8 tono";
+            else label = "1/4 tono";
+            
+            return (cents > 0 ? "+" : "-") + label;
         }
 
-        function reportSuccessToTracker(keyId, mode, firstTry) {
-            let id = keyId + "_" + mode;
-            if (weightsTracker[id] && firstTry) { weightsTracker[id].weight = Math.max(1, weightsTracker[id].weight - 0.5); updateWeaknessUI(); }
-        }
-
-        function updateWeaknessUI() {
-            let weaknesses = Object.values(weightsTracker).filter(item => item.weight > 1.5).sort((a, b) => b.weight - a.weight).slice(0, 5);
-            const container = document.getElementById('weakness-list');
-            if (weaknesses.length === 0) { container.innerHTML = '<span class="text-gray-400 font-normal italic">Ninguna detectada aún</span>'; return; }
-            container.innerHTML = '';
-            weaknesses.forEach(w => {
-                let p = document.createElement('span');
-                p.className = 'bg-red-200 text-red-900 px-2 py-0.5 rounded whitespace-nowrap';
-                p.textContent = w.name;
-                container.appendChild(p);
-            });
-        }
-
-        let currentKey = {}; let currentMode = "major"; let currentClef = "treble"; let currentLevel = 1;
-        let targetDegreeIndex = 0; let correctNoteFull = ""; let selectedNote = ""; let selectedAccidental = "natural";
-        let phase = 1; let stats = { correct: 0, incorrect: 0, streak: 0 }; let historyLog = []; 
-        let attemptsPhase1 = 0; let attemptsPhase2 = 0; let challengeActive = false; let timer = 60; let timerInterval;
-        let synth; let audioInitialized = false;
-
+        let isAudioInitialized = false;
         async function initAudio() {
-            if(!audioInitialized) { await Tone.start(); synth = new Tone.PolySynth(Tone.Synth).toDestination(); synth.volume.value = -10; audioInitialized = true; }
-        }
-
-        function playSound(type, customNote = null) {
-            if(!synth) return;
-            const now = Tone.now();
-            if (customNote && toneMap[customNote]) {
-                synth.triggerAttackRelease(toneMap[customNote], "8n", now);
-                if(type === 'success') synth.triggerAttackRelease(["C4", "E4", "G4", "C5"], "4n", now + 0.3);
-                if(type === 'error') synth.triggerAttackRelease(["C4", "Eb4", "Gb4"], "4n", now + 0.3);
-            } else {
-                if(type === 'success') synth.triggerAttackRelease(["C4", "E4", "G4"], "8n");
-                if(type === 'error') synth.triggerAttackRelease(["C4", "Eb4", "Gb4"], "8n");
+            if (!isAudioInitialized) {
+                await Tone.start();
+                audioContext = Tone.context.rawContext;
+                
+                micAnalyser = audioContext.createAnalyser();
+                micAnalyser.fftSize = 4096; 
+                internalAnalyser = audioContext.createAnalyser();
+                internalAnalyser.fftSize = 2048;
+                
+                // Limitador de seguridad para evitar saturación de audio
+                masterGain = new Tone.Gain(0.8);
+                const limiter = new Tone.Limiter(-2).toDestination();
+                masterGain.connect(limiter);
+                
+                synth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: document.getElementById('waveform').value },
+                    envelope: { attack: 0.05, decay: 0.3, sustain: 0.2, release: 1.5 } 
+                });
+                
+                // Sintetizador del Ding
+                chimeSynth = new Tone.Synth({
+                    oscillator: { type: 'sine' },
+                    envelope: { attack: 0.005, decay: 0.5, sustain: 0, release: 0.5 }
+                }).connect(masterGain);
+                
+                synth.connect(masterGain);
+                synth.connect(internalAnalyser);
+                
+                document.getElementById('waveform').addEventListener('change', (e) => synth.set({ oscillator: { type: e.target.value } }));
+                
+                const volSlider = document.getElementById('master-volume');
+                if (volSlider) {
+                    masterGain.gain.value = parseFloat(volSlider.value) / 100;
+                }
+                
+                isAudioInitialized = true;
             }
         }
 
-        const ui = {
-            staff: document.getElementById('vexflow-canvas'), mainInst: document.getElementById('main-instruction'),
-            keySelect: document.getElementById('key-select'), btnCheckKey: document.getElementById('btn-check-key'),
-            msgP1: document.getElementById('msg-phase1'), panelP2: document.getElementById('phase-2-panel'),
-            scaleQ: document.getElementById('scale-question'), currAns: document.getElementById('current-answer'),
-            btnCheckScale: document.getElementById('btn-check-scale'), msgP2: document.getElementById('msg-phase2'),
-            streak: document.getElementById('streak-counter'), clefMode: document.getElementById('clef-mode'), 
-            timer: document.getElementById('timer-display'), scoreCorrect: document.getElementById('score-correct'), 
-            scoreIncorrect: document.getElementById('score-incorrect'), levelDisplay: document.getElementById('current-level')
-        };
+        function calculateHarmonics(fundamentalFreq, count, currentSeriesId) {
+            const harmonics = [];
+            for (let i = 1; i <= count; i++) {
+                const freq = fundamentalFreq * i;
+                const midiExact = frequencyToMidi(freq);
+                const closestMidi = Math.round(midiExact);
+                const cents = (midiExact - closestMidi) * 100;
+                const noteInfo = midiToNoteString(closestMidi);
+                
+                let colorClass = "text-emerald-500"; 
+                if (Math.abs(cents) > 10) colorClass = "text-blue-500";
+                if (Math.abs(cents) > 25) colorClass = "text-rose-500";
 
-        let chartInstance = null;
-        
-        function addHistoryRecord(question, answer, status) {
-            const now = new Date();
-            const timestamp = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            historyLog.unshift({ timestamp, question, answer, status });
+                harmonics.push({
+                    index: i, freq: freq, cents: cents, note: noteInfo.name,
+                    octave: noteInfo.octave, fullName: noteInfo.fullName,
+                    colorClass: colorClass,
+                    id: `vf-id-${currentSeriesId}-${i}`, 
+                    seriesId: currentSeriesId
+                });
+            }
+            return harmonics;
         }
 
-        function renderModalData() {
-            const tbody = document.getElementById('history-tbody');
-            tbody.innerHTML = '';
-            let c = 0; let i = 0; let a = 0;
+        window.addSeries = function() {
+            const note = document.getElementById('base-note').value;
+            const octave = parseInt(document.getElementById('base-octave').value);
+            const count = parseInt(document.getElementById('num-harmonics').value);
             
-            const now = new Date();
-            document.getElementById('report-timestamp').textContent = `Generado el: ${now.toLocaleDateString()} a las ${now.toLocaleTimeString()}`;
+            seriesIdCounter++;
+            activeSeries.push({
+                id: seriesIdCounter, fundamentalNote: note, fundamentalOctave: octave,
+                fundamentalFreq: getFrequency(note, octave),
+                harmonics: calculateHarmonics(getFrequency(note, octave), count, seriesIdCounter),
+                color: seriesColors[seriesIdCounter % seriesColors.length]
+            });
+            renderSeriesUI();
+        }
+
+        window.removeSeries = function(index) { activeSeries.splice(index, 1); renderSeriesUI(); }
+        window.clearAllSeries = function() { activeSeries = []; renderSeriesUI(); }
+
+        window.updateHarmonicCount = function(sIndex, newCount) {
+            let count = parseInt(newCount);
+            if (isNaN(count) || count < 2) count = 2;
+            if (count > 64) count = 64; 
+            const series = activeSeries[sIndex];
+            series.harmonics = calculateHarmonics(series.fundamentalFreq, count, series.id);
+            renderSeriesUI();
+        }
+
+        window.renderVexFlow = function() {
+            if (typeof Vex === "undefined") { setTimeout(renderVexFlow, 100); return; }
             
-            if (historyLog.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-4 text-center text-gray-400 italic">No has respondido nada aún.</td></tr>';
+            const scoreContainer = document.getElementById('score-container');
+            scoreContainer.innerHTML = ''; 
+            
+            window.vfNoteMap = {}; // Limpiamos el mapa de memoria
+            
+            if (activeSeries.length === 0) return;
+            
+            const renderer = new VF.Renderer(scoreContainer, VF.Renderer.Backends.SVG);
+            let highestOctave = 0, lowestOctave = 9, maxHarmonics = 0;
+            
+            activeSeries.forEach(series => {
+                if (series.harmonics.length > maxHarmonics) maxHarmonics = series.harmonics.length;
+                series.harmonics.forEach(h => {
+                    if (h.octave > highestOctave) highestOctave = h.octave;
+                    if (h.octave < lowestOctave) lowestOctave = h.octave;
+                });
+            });
+
+            const needsTreble = highestOctave >= 4;
+            const needsBass = lowestOctave < 4;
+            const mode = document.getElementById('score-view-mode').value;
+            
+            const reqWidth = mode === 'horizontal' ? (maxHarmonics * 40 + 80) : (activeSeries.length * 80 + 80);
+            const finalWidth = Math.max(800, reqWidth); 
+            
+            const TOP_MARGIN = 40; 
+            const STAVE_GAP = 120; 
+            const HEIGHT_BOTH = 340;
+            const HEIGHT_SINGLE = 180;
+            const finalHeight = needsTreble && needsBass ? HEIGHT_BOTH : HEIGHT_SINGLE;
+            
+            renderer.resize(finalWidth, finalHeight);
+            
+            // MAGIA PARA EVITAR EL SCROLL: SVG viewBox Adaptativo
+            const svgEl = scoreContainer.querySelector('svg');
+            if(svgEl) {
+                svgEl.setAttribute('viewBox', `0 0 ${finalWidth} ${finalHeight}`);
+                svgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+                svgEl.style.width = '100%';
+                svgEl.style.height = 'auto';
+                svgEl.style.maxHeight = '100%';
+            }
+
+            const context = renderer.getContext();
+            context.setFont("Arial", 10, "").setBackgroundFillStyle("transparent");
+
+            const staves = [];
+            if (needsTreble) {
+                const trebleStave = new VF.Stave(10, TOP_MARGIN, finalWidth - 20).addClef("treble");
+                trebleStave.setContext(context).draw();
+                staves.push({ type: 'treble', stave: trebleStave });
+            }
+            if (needsBass) {
+                const bassY = needsTreble ? (TOP_MARGIN + STAVE_GAP) : TOP_MARGIN;
+                const bassStave = new VF.Stave(10, bassY, finalWidth - 20).addClef("bass");
+                bassStave.setContext(context).draw();
+                staves.push({ type: 'bass', stave: bassStave });
+            }
+
+            let trebleNotes = [], bassNotes = [];
+
+            function getNoteData(h) {
+                const base = h.note.replace('#', '').toLowerCase();
+                const acc = h.note.includes('#') ? '#' : '';
+                return { key: `${base}${acc}/${h.octave}`, acc: acc, id: h.id, midi: frequencyToMidi(h.freq) };
+            }
+
+            function createChord(clef, noteDataArray) {
+                const uniqueMap = new Map();
+                for (const n of noteDataArray) {
+                    if (!uniqueMap.has(n.key)) { uniqueMap.set(n.key, { ...n, allIds: [n.id] }); } 
+                    else { uniqueMap.get(n.key).allIds.push(n.id); }
+                }
+                
+                const unique = Array.from(uniqueMap.values());
+                if (unique.length === 0) {
+                    const restKey = clef === 'treble' ? "b/4" : "d/3";
+                    return new VF.StaveNote({ clef: clef, keys: [restKey], duration: "qr" });
+                }
+                
+                unique.sort((a, b) => a.midi - b.midi);
+                const chord = new VF.StaveNote({ clef: clef, keys: unique.map(n => n.key), duration: "q" });
+                
+                unique.forEach((n, idx) => {
+                    if (n.acc) chord.addModifier(new VF.Accidental(n.acc), idx);
+                });
+                
+                chord._logicalNotes = unique; 
+                return chord;
+            }
+
+            if (mode === 'horizontal') {
+                for (let i = 0; i < maxHarmonics; i++) {
+                    let tData = [], bData = [];
+                    activeSeries.forEach(series => {
+                        if (i < series.harmonics.length) {
+                            const h = series.harmonics[i];
+                            const data = getNoteData(h);
+                            if (h.octave >= 4) tData.push(data); else bData.push(data);
+                        }
+                    });
+                    if(needsTreble) trebleNotes.push(createChord('treble', tData));
+                    if(needsBass) bassNotes.push(createChord('bass', bData));
+                }
             } else {
-                historyLog.forEach(record => {
-                    let badge = ''; let rowClass = 'hover:bg-gray-50';
-                    if (record.status === 'success') { badge = '<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Correcto</span>'; c++; }
-                    else if (record.status === 'failed') { badge = '<span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded">Error</span>'; i++; rowClass = 'bg-red-50 hover:bg-red-100'; }
-                    else if (record.status === 'assisted') { badge = '<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">Asistido</span>'; a++; }
-                    
-                    const tr = document.createElement('tr');
-                    tr.className = `border-b border-gray-100 ${rowClass}`;
-                    tr.innerHTML = `
-                        <td class="px-4 py-2 font-mono text-xs text-gray-500 whitespace-nowrap">${record.timestamp}</td>
-                        <td class="px-4 py-2 font-medium">${record.question}</td>
-                        <td class="px-4 py-2">${record.answer}</td>
-                        <td class="px-4 py-2">${badge}</td>
-                    `;
-                    tbody.appendChild(tr);
+                activeSeries.forEach(series => {
+                    let tData = [], bData = [];
+                    series.harmonics.forEach((h) => {
+                        const data = getNoteData(h);
+                        if (h.octave >= 4) tData.push(data); else bData.push(data);
+                    });
+                    if(needsTreble) trebleNotes.push(createChord('treble', tData));
+                    if(needsBass) bassNotes.push(createChord('bass', bData));
                 });
             }
 
-            document.getElementById('stat-c').textContent = c; document.getElementById('stat-i').textContent = i;
-
-            const ctx = document.getElementById('history-chart').getContext('2d');
-            if(chartInstance) chartInstance.destroy();
-            
-            if (c===0 && i===0 && a===0) {
-                chartInstance = new Chart(ctx, { type: 'doughnut', data: { labels: ['Sin datos'], datasets: [{ data: [1], backgroundColor: ['#e5e7eb'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } } } });
-            } else {
-                chartInstance = new Chart(ctx, { type: 'doughnut', data: { labels: ['Aciertos', 'Errores', 'Asistidos'], datasets: [{ data: [c, i, a], backgroundColor: ['#22c55e', '#ef4444', '#eab308'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, cutout: '70%' } });
-            }
-        }
-
-        document.getElementById('btn-export-pdf').addEventListener('click', () => {
-            const element = document.getElementById('pdf-content');
-            const tableContainer = document.getElementById('table-scroll-container');
-            tableContainer.classList.remove('max-h-96', 'overflow-y-auto');
-            
-            html2pdf().set({
-              margin: 10, filename: `Reporte_Teoria_Musical_${new Date().getTime()}.pdf`,
-              image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true },
-              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            }).from(element).save().then(() => {
-                tableContainer.classList.add('max-h-96', 'overflow-y-auto');
-            });
-        });
-
-        document.getElementById('btn-history').addEventListener('click', () => { renderModalData(); document.getElementById('history-modal').classList.remove('hidden'); });
-        document.getElementById('btn-close-modal').addEventListener('click', () => { document.getElementById('history-modal').classList.add('hidden'); });
-
-        function getAdaptiveLevelMaxAcc() {
-            if (stats.streak >= 10) { currentLevel = 3; return 7; }
-            if (stats.streak >= 5) { currentLevel = 2; return 4; }
-            currentLevel = 1; return 2;
-        }
-
-        function generateExercise() {
-            phase = 1; attemptsPhase1 = 0; attemptsPhase2 = 0;
-            ui.panelP2.classList.add('opacity-50', 'pointer-events-none');
-            ui.msgP1.classList.add('hidden'); ui.msgP2.classList.add('hidden');
-            ui.btnCheckKey.textContent = "Comprobar Tonalidad (Enter)";
-            ui.btnCheckScale.textContent = "Verificar"; ui.btnCheckScale.className = "bg-green-600 text-white font-bold px-6 py-2 rounded-lg hover:bg-green-700 btn-press";
-            
-            selectedNote = ""; selectedAccidental = "natural"; updateAnswerDisplay();
-            document.querySelectorAll('.note-btn, .acc-btn').forEach(b => b.classList.replace('bg-indigo-200', 'bg-transparent'));
-
-            const maxAcc = getAdaptiveLevelMaxAcc();
-            ui.levelDisplay.textContent = currentLevel;
-            const filteredKeys = keys.filter(k => k.acc <= maxAcc);
-            
-            let selection = getWeightedRandomExercise(filteredKeys);
-            currentKey = selection.obj; currentMode = selection.mode;
-            
-            let cMode = ui.clefMode.value;
-            if (cMode === 'random') currentClef = Math.random() > 0.5 ? "treble" : "bass"; else currentClef = cMode;
-
-            targetDegreeIndex = Math.floor(Math.random() * 7);
-            correctNoteFull = scalesData[currentMode === "major" ? currentKey.major : currentKey.minor][targetDegreeIndex];
-
-            ui.mainInst.textContent = `Identifica la Tonalidad ${currentMode === "major" ? "MAYOR" : "MENOR"}`;
-            ui.keySelect.innerHTML = "";
-            let optsArray = filteredKeys.map(k => {
-                let opt = document.createElement('option');
-                let val = currentMode === "major" ? k.major : k.minor;
-                opt.value = val; opt.textContent = val; return opt;
-            });
-            optsArray.sort(() => Math.random() - 0.5);
-            optsArray.forEach(opt => ui.keySelect.appendChild(opt));
-            ui.keySelect.selectedIndex = -1;
-            ui.scaleQ.textContent = `Completa la fase 1 primero.`;
-            drawStaff(currentKey.id, currentClef);
-        }
-
-        function drawStaff(keySig, clef, targetNote = null) {
-            ui.staff.innerHTML = "";
-            const renderer = new VF.Renderer(ui.staff, VF.Renderer.Backends.SVG);
-            renderer.resize(300, 120);
-            const context = renderer.getContext();
-            const stave = new VF.Stave(10, 10, 280);
-            stave.addClef(clef).addKeySignature(keySig);
-            stave.setContext(context).draw();
-
-            if (targetNote) {
-                let base = targetNote.replace(/[b#]/g, '');
-                let acc = targetNote.includes('b') ? 'b' : (targetNote.includes('#') ? '#' : 'n');
-                let staveNote = new VF.StaveNote({ clef: clef, keys: [stavesMap[base]], duration: "w" });
-                if (acc !== 'n') staveNote.addAccidental(0, new VF.Accidental(acc));
-                const voice = new VF.Voice({num_beats: 4, beat_value: 4});
-                voice.addTickables([staveNote]);
-                new VF.Formatter().joinVoices([voice]).format([voice], 200);
+            const formatAndDraw = (notes, staveType) => {
+                if(notes.length === 0) return;
+                const voice = new VF.Voice({ num_beats: notes.length, beat_value: 4 }).setStrict(false);
+                voice.addTickables(notes);
+                const stave = staves.find(s => s.type === staveType).stave;
+                new VF.Formatter().joinVoices([voice]).format([voice], stave.getWidth() - 30);
                 voice.draw(context, stave);
-            }
-        }
+            };
 
-        function updateScore(isCorrect) {
-            if (challengeActive) return;
-            if (isCorrect) {
-                stats.correct++; stats.streak++; playSound('success');
-                if(stats.streak > 0 && stats.streak % 5 === 0) createConfetti();
-            } else {
-                stats.incorrect++; stats.streak = 0; playSound('error');
-            }
-            ui.scoreCorrect.textContent = stats.correct; ui.scoreIncorrect.textContent = stats.incorrect;
-            ui.streak.textContent = stats.streak;
-        }
+            if (needsTreble) formatAndDraw(trebleNotes, 'treble');
+            if (needsBass) formatAndDraw(bassNotes, 'bass');
 
-        ui.btnCheckKey.addEventListener('click', () => {
-            if (phase !== 1) return;
-            initAudio(); const selected = ui.keySelect.value; if (!selected) return;
-
-            const correctKeyName = currentMode === "major" ? currentKey.major : currentKey.minor;
-            const relativeName = currentMode === "major" ? currentKey.minor : currentKey.major;
-
-            if (selected === correctKeyName) {
-                let status = attemptsPhase1 >= 2 ? 'assisted' : 'success';
-                addHistoryRecord(`Armadura ${currentKey.acc}${currentKey.type==='sharp'?'#':'b'} (${currentClef})`, selected, status);
-                if(status === 'success') { updateScore(true); reportSuccessToTracker(currentKey.id, currentMode, attemptsPhase1 === 0); }
-                
-                ui.msgP1.textContent = `¡Correcto! Relativa: ${relativeName}.`;
-                ui.msgP1.className = "mt-4 text-center font-bold text-sm p-3 rounded bg-green-100 text-green-800 block";
-                ui.btnCheckKey.textContent = "✓ Aprobado"; ui.btnCheckKey.classList.replace('bg-indigo-600', 'bg-green-600');
-                
-                phase = 2; ui.panelP2.classList.remove('opacity-50', 'pointer-events-none');
-                ui.scaleQ.innerHTML = `¿Cuál es la <b class="mx-1 text-green-800">${degrees[targetDegreeIndex]}</b> de <b class="mx-1 text-green-800">${correctKeyName}</b>?`;
-                ui.scaleQ.classList.replace('bg-green-50', 'bg-green-200');
-            } else {
-                attemptsPhase1++; reportErrorToTracker(currentKey.id, currentMode); 
-                
-                if (attemptsPhase1 === 1) {
-                    let hintText = "";
-                    if (currentKey.type === 'sharp') hintText = "💡 Pista: Observa el último sostenido (a la derecha) y sube medio tono para hallar la Mayor.";
-                    else if (currentKey.type === 'flat') hintText = "💡 Pista: La tonalidad Mayor es el penúltimo bemol (si hay 1 bemol, es Fa Mayor).";
-                    else hintText = "💡 Pista: Sin alteraciones siempre es Do Mayor (o La menor).";
+            // --- EL MAPEO ESPACIAL POST-DIBUJO ---
+            const domNotes = document.querySelectorAll('#score-container .vf-stavenote');
+            let domIndex = 0;
+            
+            const processVoiceForMapping = (logicalNotesArray) => {
+                logicalNotesArray.forEach(chord => {
+                    const domNode = domNotes[domIndex++]; 
+                    if (!domNode) return;
                     
-                    ui.msgP1.innerHTML = `Incorrecto. <div class="mt-2 bg-blue-100 text-blue-800 p-2 rounded text-xs border border-blue-200 text-left font-normal">${hintText}</div>`;
-                    ui.msgP1.className = "mt-4 text-center font-bold text-sm p-3 rounded bg-red-50 text-red-800 block border border-red-200";
-                    updateScore(false);
-                } else if (attemptsPhase1 >= 2) {
-                    ui.msgP1.innerHTML = `La tonalidad es <b class="mx-1">${correctKeyName}</b>. Selecciónala para avanzar.`;
-                    ui.msgP1.className = "mt-4 text-center font-bold text-sm p-3 rounded bg-red-100 text-red-800 block border border-red-300";
-                    playSound('error'); stats.streak = 0; ui.streak.textContent = stats.streak;
-                }
-            }
-        });
+                    if (chord._logicalNotes && chord._logicalNotes.length > 0) {
+                        const noteheads = Array.from(domNode.querySelectorAll('.vf-notehead'));
+                        noteheads.sort((a, b) => b.getBoundingClientRect().top - a.getBoundingClientRect().top);
+                        
+                        chord._logicalNotes.forEach((logicalNoteData, idx) => {
+                            const headDom = noteheads[idx]; 
+                            if (headDom) {
+                                logicalNoteData.allIds.forEach(logicalId => {
+                                    window.vfNoteMap[logicalId] = headDom;
+                                });
+                            }
+                        });
+                    }
+                });
+            };
 
-        document.querySelectorAll('.note-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                initAudio();
-                document.querySelectorAll('.note-btn').forEach(b => b.classList.replace('bg-indigo-200', 'bg-transparent'));
-                e.target.classList.add('bg-indigo-200'); selectedNote = e.target.dataset.val; updateAnswerDisplay();
-            });
-        });
-
-        document.querySelectorAll('.acc-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                initAudio();
-                document.querySelectorAll('.acc-btn').forEach(b => b.classList.replace('bg-indigo-200', 'bg-transparent'));
-                e.target.classList.add('bg-indigo-200'); selectedAccidental = e.target.dataset.val; updateAnswerDisplay();
-            });
-        });
-
-        function updateAnswerDisplay() {
-            let accSymbol = selectedAccidental === "natural" ? "♮" : selectedAccidental;
-            ui.currAns.textContent = selectedNote ? `${selectedNote} ${accSymbol}` : "_";
-            ui.currAns.className = selectedNote ? "flex-grow bg-indigo-50 border border-indigo-200 text-center font-bold text-xl py-2 rounded" : "flex-grow bg-yellow-50 border border-yellow-200 text-center font-bold text-xl py-2 rounded";
+            if (trebleNotes.length > 0) processVoiceForMapping(trebleNotes);
+            if (bassNotes.length > 0) processVoiceForMapping(bassNotes);
         }
 
-        ui.btnCheckScale.addEventListener('click', () => {
-            if (phase === 3) { generateExercise(); return; }
-            if (phase !== 2 || !selectedNote) return;
-
-            let finalAcc = selectedAccidental === "natural" ? "" : selectedAccidental;
-            let userAnswer = selectedNote + finalAcc;
-            let qText = `Grado ${targetDegreeIndex+1} de ${currentMode === "major" ? currentKey.major : currentKey.minor}`;
-
-            if (userAnswer === correctNoteFull) {
-                let status = attemptsPhase2 >= 2 ? 'assisted' : 'success';
-                addHistoryRecord(qText, userAnswer, status);
-                if(status === 'success') { updateScore(true); reportSuccessToTracker(currentKey.id, currentMode, attemptsPhase2 === 0); }
+        function createSvgGradient(svg, colors) {
+            const uniqueColors = [...new Set(colors)];
+            if (uniqueColors.length === 1) return uniqueColors[0];
+            
+            const gradId = 'vf-grad-' + uniqueColors.map(c => c.replace('#', '')).join('-');
+            let defs = svg.querySelector('defs');
+            if (!defs) { defs = document.createElementNS("http://www.w3.org/2000/svg", "defs"); svg.insertBefore(defs, svg.firstChild); }
+            
+            if (!document.getElementById(gradId)) {
+                const grad = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient");
+                grad.setAttribute('id', gradId);
+                grad.setAttribute('x1', '0%'); grad.setAttribute('y1', '0%'); grad.setAttribute('x2', '100%'); grad.setAttribute('y2', '100%');
                 
-                ui.msgP2.innerHTML = `¡Correcto! Escucha.`;
-                ui.msgP2.className = "mt-4 text-center font-bold text-sm p-3 rounded bg-green-100 text-green-800 block";
-                playSound('success', correctNoteFull); drawStaff(currentKey.id, currentClef, correctNoteFull);
-                phase = 3; ui.btnCheckScale.textContent = "Siguiente (Enter)"; ui.btnCheckScale.className = "bg-blue-600 text-white font-bold px-6 py-2 rounded-lg hover:bg-blue-700 btn-press w-full";
-            } else {
-                attemptsPhase2++; reportErrorToTracker(currentKey.id, currentMode); 
-                if (attemptsPhase2 >= 2) {
-                    ui.msgP2.innerHTML = `Nota correcta: <b class="mx-1">${correctNoteFull}</b>. Ármala para avanzar.`;
-                    ui.msgP2.className = "mt-4 text-center font-bold text-sm p-3 rounded bg-red-100 text-red-800 block border border-red-300";
-                    playSound('error'); stats.streak = 0; ui.streak.textContent = stats.streak;
-                } else {
-                    ui.msgP2.textContent = `Incorrecto.`; ui.msgP2.className = "mt-4 text-center font-bold text-sm p-3 rounded bg-red-100 text-red-800 block"; updateScore(false);
-                }
+                const step = 100 / Math.max(1, uniqueColors.length - 1);
+                uniqueColors.forEach((color, i) => {
+                    const stop = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+                    stop.setAttribute('offset', `${i === 0 ? 0 : i === uniqueColors.length-1 ? 100 : i * step}%`);
+                    stop.setAttribute('stop-color', color);
+                    grad.appendChild(stop);
+                });
+                defs.appendChild(grad);
             }
-        });
+            return `url(#${gradId})`;
+        }
 
-        document.getElementById('btn-challenge').addEventListener('click', () => {
-            if (challengeActive) return;
-            initAudio(); challengeActive = true; timer = 60;
-            stats = { correct: 0, incorrect: 0, streak: 0 }; historyLog = [];
-            ui.scoreCorrect.textContent = "0"; ui.scoreIncorrect.textContent = "0"; ui.streak.textContent = "0";
-            ui.timer.classList.remove('hidden'); ui.timer.textContent = timer;
-            generateExercise();
+        window.triggerHighlight = function(logicalId, color, durationMs, noteNameStr) {
+            const eventId = `evt-${Date.now()}-${Math.random()}`; 
+            window.activeVisuals.set(eventId, {
+                logicalId: logicalId, color: color, noteNameStr: noteNameStr,
+                expires: performance.now() + durationMs
+            });
+            if (!animationFrameId) animationFrameId = requestAnimationFrame(processVisualState);
+        }
 
-            timerInterval = setInterval(() => {
-                timer--; ui.timer.textContent = timer;
-                if (timer <= 0) {
-                    clearInterval(timerInterval); challengeActive = false; ui.timer.classList.add('hidden'); phase = 3;
-                    ui.staff.innerHTML = `<div class="text-center py-6"><h2 class="text-2xl font-black text-purple-600 mb-2">¡Tiempo Terminado!</h2>
-                        <p class="text-lg">Aciertos: <b>${stats.correct}</b> | Errores: <b>${stats.incorrect}</b></p>
-                        <button onclick="generateExercise()" class="mt-4 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">Jugar Normal</button></div>`;
+        function processVisualState(now) {
+            let keepAnimating = false;
+            const nextCards = new Map();
+            const nextPiano = new Map();
+            const nextScore = new Map(); 
+
+            window.activeVisuals.forEach((event, eventId) => {
+                if (now > event.expires) {
+                    window.activeVisuals.delete(eventId);
+                } else {
+                    keepAnimating = true;
+                    if (!nextCards.has(event.logicalId)) nextCards.set(event.logicalId, new Set());
+                    nextCards.get(event.logicalId).add(event.color);
+                    
+                    if (event.noteNameStr) {
+                        if (!nextPiano.has(event.noteNameStr)) nextPiano.set(event.noteNameStr, new Set());
+                        nextPiano.get(event.noteNameStr).add(event.color);
+                    }
+                    
+                    const targetDom = window.vfNoteMap[event.logicalId];
+                    if (targetDom) {
+                        if (!nextScore.has(targetDom)) nextScore.set(targetDom, new Set());
+                        nextScore.get(targetDom).add(event.color);
+                    }
                 }
-            }, 1000);
-        });
+            });
 
-        document.getElementById('btn-reset').addEventListener('click', () => {
-            if(challengeActive) { clearInterval(timerInterval); challengeActive = false; ui.timer.classList.add('hidden'); }
-            stats = { correct: 0, incorrect: 0, streak: 0 }; historyLog = []; weightsTracker = {}; 
-            updateWeaknessUI(); ui.scoreCorrect.textContent = "0"; ui.scoreIncorrect.textContent = "0"; ui.streak.textContent = "0";
-            generateExercise();
-        });
+            document.querySelectorAll('[id^="card-"]').forEach(el => {
+                const logicalId = el.id.replace('card-', '');
+                if (nextCards.has(logicalId)) {
+                    const colors = Array.from(nextCards.get(logicalId));
+                    el.style.backgroundColor = `${colors[0]}15`; el.style.borderColor = colors[0]; el.style.boxShadow = `0 0 12px ${colors[0]}60`;
+                } else {
+                    el.style.backgroundColor = ''; el.style.borderColor = ''; el.style.boxShadow = '';
+                }
+            });
 
-        const noteKeysMap = { "1": "Do", "2": "Re", "3": "Mi", "4": "Fa", "5": "Sol", "6": "La", "7": "Si" };
-        window.addEventListener('keydown', (e) => {
-            if (e.target.tagName === 'SELECT') return;
-            if (phase === 1 && e.key === 'Enter') { ui.btnCheckKey.click(); } 
-            else if (phase === 2) {
-                if (noteKeysMap[e.key]) document.querySelector(`.note-btn[data-val="${noteKeysMap[e.key]}"]`).click();
-                else if (e.key === 'ArrowLeft') document.querySelector(`.acc-btn[data-val="b"]`).click();
-                else if (e.key === 'ArrowDown') document.querySelector(`.acc-btn[data-val="natural"]`).click();
-                else if (e.key === 'ArrowRight') document.querySelector(`.acc-btn[data-val="#"]`).click();
-                else if (e.key === 'Enter') ui.btnCheckScale.click();
-            } else if (phase === 3 && e.key === 'Enter') { ui.btnCheckScale.click(); }
-        });
+            document.querySelectorAll('.white-key, .black-key').forEach(el => {
+                const noteNameStr = el.getAttribute('data-note');
+                if (nextPiano.has(noteNameStr)) {
+                    const colors = Array.from(nextPiano.get(noteNameStr));
+                    el.classList.add('active-key');
+                    if (colors.length === 1) el.style.setProperty('background', colors[0], 'important');
+                    else el.style.setProperty('background', `linear-gradient(180deg, ${colors.join(', ')})`, 'important');
+                } else {
+                    el.classList.remove('active-key'); el.style.removeProperty('background');
+                }
+            });
 
-        function createConfetti() {
-            for(let i=0; i<30; i++) {
-                let conf = document.createElement('div'); conf.className = 'confetti';
-                conf.style.left = Math.random() * 100 + 'vw'; conf.style.backgroundColor = `hsl(${Math.random()*360}, 100%, 50%)`;
-                conf.style.animationDuration = (Math.random() * 2 + 2) + 's'; document.body.appendChild(conf);
-                setTimeout(() => conf.remove(), 4000);
+            const svgEl = document.querySelector('#score-container svg');
+            
+            Object.values(window.vfNoteMap).forEach(targetDom => {
+                const targetElements = targetDom.tagName.toLowerCase() === 'g' ? Array.from(targetDom.querySelectorAll('path, rect')) : [targetDom];
+                targetElements.forEach(el => { 
+                    el.style.removeProperty('fill'); 
+                    el.style.removeProperty('stroke'); 
+                    el.style.removeProperty('filter'); 
+                    el.style.removeProperty('transition');
+                });
+            });
+
+            nextScore.forEach((colorSet, targetDom) => {
+                const colors = Array.from(colorSet);
+                const fillValue = (colors.length > 1 && svgEl) ? createSvgGradient(svgEl, colors) : colors[0];
+                const filterValue = colors.map(c => `drop-shadow(0px 0px 4px ${c}) drop-shadow(0px 0px 1px ${c})`).join(' ');
+                
+                const targetElements = targetDom.tagName.toLowerCase() === 'g' ? Array.from(targetDom.querySelectorAll('path, rect')) : [targetDom];
+                targetElements.forEach(el => {
+                    el.style.setProperty('fill', fillValue, 'important');
+                    el.style.setProperty('stroke', fillValue, 'important');
+                    el.style.setProperty('filter', filterValue, 'important');
+                    el.style.setProperty('transition', 'fill 0.05s, filter 0.05s', 'important');
+                });
+            });
+
+            if (keepAnimating) animationFrameId = requestAnimationFrame(processVisualState);
+            else animationFrameId = null;
+        }
+
+        function renderSeriesUI() {
+            const container = document.getElementById('series-container');
+            container.innerHTML = '';
+            
+            activeSeries.forEach((series, index) => {
+                const card = document.createElement('div');
+                card.className = 'bg-white dark:bg-slate-800 rounded shadow-sm border flex flex-col shrink-0 transition-colors';
+                card.style.borderColor = `${series.color}40`;
+                
+                let html = `
+                    <div class="flex flex-wrap sm:flex-nowrap justify-between items-center p-2 border-b gap-2" style="background-color: ${series.color}0A; border-bottom-color: ${series.color}20">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full shadow-sm" style="background-color: ${series.color}"></span>
+                            <div>
+                                <h3 class="font-bold text-xs" style="color: ${series.color}">Serie de ${series.fundamentalNote}${series.fundamentalOctave}</h3>
+                                <div class="text-[9px] text-slate-500">${series.fundamentalFreq.toFixed(1)} Hz</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1.5 ml-auto">
+                            <div class="flex items-center bg-white dark:bg-slate-700 border rounded px-1 shadow-sm h-6">
+                                <span class="text-[8px] text-slate-400 uppercase font-bold mr-1">Parciales</span>
+                                <input type="number" min="2" max="64" value="${series.harmonics.length}" 
+                                       class="w-8 text-center text-[9px] font-bold outline-none bg-transparent text-slate-800 dark:text-slate-100"
+                                       onchange="updateHarmonicCount(${index}, this.value)">
+                            </div>
+                            <button onclick="playSeriesSequential(${index}, 0)" class="h-6 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-[9px] font-bold px-2 border rounded shadow-sm flex items-center transition">▶ Secuencia</button>
+                            <button onclick="playSeriesChord(${index})" class="h-6 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-[9px] font-bold px-2 border rounded shadow-sm flex items-center transition">🎹 Acorde</button>
+                            <button onclick="removeSeries(${index})" class="h-6 w-6 flex items-center justify-center text-rose-400 hover:text-rose-600 bg-rose-50 dark:bg-slate-700 rounded font-bold text-sm transition">&times;</button>
+                        </div>
+                    </div>
+                    <div class="p-2 flex overflow-x-auto gap-1.5 pb-2">
+                `;
+
+                series.harmonics.forEach((h) => {
+                    const microLabel = getMicrotonalLabel(h.cents);
+                    html += `
+                        <div id="card-${h.id}" class="flex-shrink-0 w-[56px] bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded p-1 text-center relative cursor-pointer transition-all duration-100"
+                             onclick="playTone(${h.freq}, 0.5); window.triggerHighlight('${h.id}', '${series.color}', 600, '${h.fullName}')">
+                            <div class="absolute -top-1 -left-1 w-3.5 h-3.5 rounded-full text-[7px] flex items-center justify-center text-white font-bold" style="background-color: ${series.color}">${h.index}</div>
+                            <div class="font-bold text-[10px] mt-1 text-slate-800 dark:text-slate-200">${h.note}<sup>${h.octave}</sup></div>
+                            <div class="text-[7px] text-slate-400 font-mono">${h.freq.toFixed(1)}Hz</div>
+                            <div class="text-[8px] font-bold ${h.colorClass} mt-0.5 leading-tight">
+                                ${h.cents > 0 ? '+' : ''}${h.cents.toFixed(1)}c
+                                <div class="text-[6.5px] opacity-80 mt-0.5">${microLabel}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+                card.innerHTML = html;
+                container.appendChild(card);
+            });
+            renderVexFlow();
+        }
+
+        function renderPiano() {
+            const container = document.getElementById('piano-container');
+            container.innerHTML = '';
+            const minOctave = 2, maxOctave = 6;
+            const numWhiteKeys = (maxOctave - minOctave + 1) * 7;
+            const whiteKeyWidth = 100 / numWhiteKeys;
+            let whiteKeyIndex = 0;
+
+            for (let oct = minOctave; oct <= maxOctave; oct++) {
+                noteNames.forEach((noteName) => {
+                    const isBlack = noteName.includes('#');
+                    const key = document.createElement('div');
+                    key.className = isBlack ? 'black-key' : 'white-key';
+                    const fullNoteName = `${noteName}${oct}`;
+                    key.setAttribute('data-note', fullNoteName);
+                    key.id = `key-${fullNoteName}`;
+
+                    if (isBlack) {
+                        key.style.width = `${whiteKeyWidth * 0.6}%`;
+                        key.style.height = '60%';
+                        key.style.left = `${(whiteKeyIndex * whiteKeyWidth) - (whiteKeyWidth * 0.3)}%`;
+                    } else {
+                        key.style.width = `${whiteKeyWidth}%`;
+                        key.style.height = '100%';
+                        if (noteName === 'C') key.innerHTML = `<span style="pointer-events: none; opacity: 0.5;">C${oct}</span>`;
+                        whiteKeyIndex++;
+                    }
+
+                    const pressKey = async (e) => {
+                        e.preventDefault(); 
+                        await initAudio();
+                        playTone(getFrequency(noteName, oct), 0.5);
+                        activeSeries.forEach(series => {
+                            series.harmonics.forEach(h => {
+                                if (h.fullName === fullNoteName) triggerHighlight(h.id, series.color, 800, fullNoteName);
+                            });
+                        });
+                    };
+
+                    key.addEventListener('mousedown', pressKey);
+                    key.addEventListener('touchstart', pressKey, {passive: false});
+                    container.appendChild(key);
+                });
             }
         }
 
-        ui.clefMode.addEventListener('change', generateExercise);
-        generateExercise();
+        let resizeTimer;
+        window.addEventListener('resize', () => { 
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                if (activeSeries.length > 0) renderVexFlow(); 
+            }, 200);
+        });
+
+        async function playTone(freq, duration) {
+            await initAudio();
+            internalTunerFreq = freq;
+            synth.triggerAttackRelease(freq, duration);
+        }
+
+        window.playSeriesSequential = async function(index, delayBeats) {
+            await initAudio();
+            const series = activeSeries[index];
+            const bpm = parseFloat(document.getElementById('bpm-slider').value);
+            const bps = bpm / 60; 
+            const secondsPerBeat = 1 / bps;
+            const noteDuration = secondsPerBeat / 2; 
+            
+            const startDelayMs = delayBeats * secondsPerBeat * 1000;
+            const nowTone = Tone.now() + (delayBeats * secondsPerBeat);
+
+            series.harmonics.forEach((h, hIdx) => {
+                const audioTime = nowTone + (hIdx * noteDuration);
+                const velocity = 1 / Math.pow(h.index, 0.6); 
+                synth.triggerAttackRelease(h.freq, noteDuration, audioTime, velocity);
+                
+                const animDelayMs = startDelayMs + (hIdx * noteDuration * 1000);
+                setTimeout(() => {
+                    internalTunerFreq = h.freq;
+                    triggerHighlight(h.id, series.color, noteDuration * 1000, h.fullName); 
+                }, animDelayMs);
+            });
+        }
+
+        window.playSeriesChord = async function(index) {
+            await initAudio();
+            const series = activeSeries[index];
+            const now = Tone.now();
+            series.harmonics.forEach((h) => {
+                const velocity = 1 / (h.index * 1.5); 
+                synth.triggerAttackRelease(h.freq, 2, now, velocity);
+                triggerHighlight(h.id, series.color, 2000, h.fullName);
+            });
+            internalTunerFreq = series.fundamentalFreq;
+        }
+
+        window.playAllSeries = async function() {
+            await initAudio();
+            const offsetBeats = parseFloat(document.getElementById('play-offset').value);
+            activeSeries.forEach((series, index) => playSeriesSequential(index, index * offsetBeats));
+        }
+
+        let microphone, micAnalyser, internalAnalyser;
+        let tunerMode = 'mic';
+        let isTuning = false;
+        let internalTunerFreq = 0;
+        let yinBuffer = new Float32Array(2048);
+        let sharedInputBuffer = null; // Memory Optimization
+        let pitchHistory = [];
+        let silenceFrames = 0;
+        window.smoothedPitch = null;
+
+        window.setTunerSource = function(src) {
+            tunerMode = src;
+            document.getElementById('tuner-src-mic').className = src === 'mic' ? 'flex-1 text-[9px] py-1 text-center rounded font-bold bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-slate-200 transition' : 'flex-1 text-[9px] py-1 text-center rounded font-bold text-slate-500 transition';
+            document.getElementById('tuner-src-synth').className = src === 'synth' ? 'flex-1 text-[9px] py-1 text-center rounded font-bold bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-slate-200 transition' : 'flex-1 text-[9px] py-1 text-center rounded font-bold text-slate-500 transition';
+        }
+
+        window.toggleTuner = async function() {
+            const btn = document.getElementById('tuner-toggle');
+            if (isTuning) {
+                isTuning = false;
+                btn.innerText = "Encender Afinador";
+                btn.className = "w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1.5 rounded text-xs transition shadow-sm";
+                resetTunerUI();
+                if (microphone) microphone.disconnect();
+                if (window.tunerAnimFrame) cancelAnimationFrame(window.tunerAnimFrame);
+                return;
+            }
+            try {
+                await initAudio();
+                if (tunerMode === 'mic') {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+                    microphone = audioContext.createMediaStreamSource(stream);
+                    microphone.connect(micAnalyser);
+                }
+                isTuning = true;
+                btn.innerText = "Apagar Afinador";
+                btn.className = "w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-1.5 rounded text-xs transition shadow-sm";
+                processTunerAudio();
+            } catch (err) { alert("Error de micrófono. Revisa los permisos."); }
+        }
+
+        function processTunerAudio() {
+            if (!isTuning) return;
+            if (tunerMode === 'synth') {
+                if (internalTunerFreq > 10) updateTunerUI(internalTunerFreq);
+                window.tunerAnimFrame = requestAnimationFrame(processTunerAudio);
+                return;
+            }
+            
+            if (!sharedInputBuffer) sharedInputBuffer = new Float32Array(micAnalyser.fftSize);
+            micAnalyser.getFloatTimeDomainData(sharedInputBuffer); 
+            
+            let rms = 0;
+            for (let i = 0; i < sharedInputBuffer.length; i++) rms += sharedInputBuffer[i] * sharedInputBuffer[i];
+            rms = Math.sqrt(rms / sharedInputBuffer.length);
+            
+            if (rms < 0.025) { 
+                silenceFrames++;
+                if (silenceFrames > 10) { 
+                    document.getElementById('tuner-hz').style.color = '#94a3b8';
+                    pitchHistory = []; window.smoothedPitch = null;
+                }
+            } else {
+                silenceFrames = 0;
+                document.getElementById('tuner-hz').style.color = '#34d399';
+                
+                for (let tau = 0; tau < yinBuffer.length; tau++) {
+                    yinBuffer[tau] = 0;
+                    for (let i = 0; i < yinBuffer.length; i++) {
+                        let delta = sharedInputBuffer[i] - sharedInputBuffer[i + tau];
+                        yinBuffer[tau] += delta * delta;
+                    }
+                }
+                let runningSum = 0; yinBuffer[0] = 1;
+                for (let tau = 1; tau < yinBuffer.length; tau++) {
+                    runningSum += yinBuffer[tau];
+                    yinBuffer[tau] *= tau / runningSum;
+                }
+                let tauEstimate = -1;
+                for (let tau = 2; tau < yinBuffer.length; tau++) {
+                    if (yinBuffer[tau] < 0.08) { // YIN Threshold ajustado a cuerdas (0.08)
+                        while (tau + 1 < yinBuffer.length && yinBuffer[tau + 1] < yinBuffer[tau]) tau++;
+                        tauEstimate = tau; break;
+                    }
+                }
+                
+                if (tauEstimate !== -1) {
+                    let refinedTau = tauEstimate;
+                    if (tauEstimate > 0 && tauEstimate < yinBuffer.length - 1) {
+                        let s0 = yinBuffer[tauEstimate - 1]; let s1 = yinBuffer[tauEstimate]; let s2 = yinBuffer[tauEstimate + 1];
+                        refinedTau += 0.5 * (s0 - s2) / (s0 - 2 * s1 + s2);
+                    }
+                    const pitchInHz = audioContext.sampleRate / refinedTau;
+                    
+                    if (pitchInHz > 20 && pitchInHz < 4000) {
+                        pitchHistory.push(pitchInHz);
+                        if (pitchHistory.length > 7) pitchHistory.shift(); 
+                        let sorted = [...pitchHistory].sort((a,b) => a - b);
+                        let median = sorted[Math.floor(sorted.length / 2)];
+                        
+                        if (!window.smoothedPitch) window.smoothedPitch = median;
+                        else {
+                            let diff = Math.abs(median - window.smoothedPitch);
+                            if (diff > window.smoothedPitch * 0.15) { 
+                                if (sorted.filter(p => Math.abs(p - median) < median * 0.05).length >= 4) window.smoothedPitch = median; 
+                            } else {
+                                window.smoothedPitch = window.smoothedPitch * 0.8 + median * 0.2; 
+                            }
+                        }
+                        if (window.smoothedPitch) updateTunerUI(window.smoothedPitch);
+                    }
+                }
+            }
+            window.tunerAnimFrame = requestAnimationFrame(processTunerAudio);
+        }
+
+        function updateTunerUI(pitchInHz) {
+            const midiNum = frequencyToMidi(pitchInHz);
+            const closestMidi = Math.round(midiNum);
+            const noteInfo = midiToNoteString(closestMidi);
+            const centsOffset = (midiNum - closestMidi) * 100;
+            
+            document.getElementById('tuner-hz').innerText = pitchInHz.toFixed(1);
+            document.getElementById('tuner-note').innerText = noteInfo.fullName;
+            document.getElementById('tuner-cents').innerText = (centsOffset > 0 ? '+' : '') + centsOffset.toFixed(1) + 'c';
+            document.getElementById('tuner-cents').style.color = Math.abs(centsOffset) <= 5 ? '#34d399' : '#f43f5e';
+            
+            document.getElementById('tuner-microtone').innerText = getMicrotonalLabel(centsOffset);
+            
+            // --- LÓGICA DE TIMBRE (DING) PARA AFINACIÓN PERFECTA ---
+            const now = performance.now();
+            if (Math.abs(centsOffset) <= 2.5) { // Rango de afinación perfecta (menos de 2.5 cents)
+                if (!isPerfectTuning && (now - lastChimeTime > 1500)) { // Cooldown de 1.5s
+                    isPerfectTuning = true;
+                    lastChimeTime = now;
+                    
+                    if (chimeSynth) chimeSynth.triggerAttackRelease("C6", "16n", Tone.now(), 0.15);
+                    
+                    // Efecto visual (destello)
+                    const lcdScreen = document.querySelector('.digital-screen');
+                    if (lcdScreen) {
+                        lcdScreen.style.setProperty('box-shadow', '0 0 15px #34d399, inset 0 2px 4px rgba(0,0,0,0.1)', 'important');
+                        lcdScreen.style.setProperty('border-color', '#34d399', 'important');
+                        setTimeout(() => {
+                            lcdScreen.style.removeProperty('box-shadow');
+                            lcdScreen.style.removeProperty('border-color');
+                        }, 400);
+                    }
+                }
+            } else if (Math.abs(centsOffset) > 8) {
+                // Histéresis: Solo permite volver a sonar si te alejas más de 8 cents
+                isPerfectTuning = false;
+            }
+        }
+        
+        function resetTunerUI() {
+            document.getElementById('tuner-hz').innerText = "--.-";
+            document.getElementById('tuner-hz').style.color = '#94a3b8';
+            document.getElementById('tuner-note').innerText = "--";
+            document.getElementById('tuner-cents').innerText = "+0.0c";
+            document.getElementById('tuner-cents').style.color = '#c7d2fe';
+            document.getElementById('tuner-microtone').innerText = "-";
+            window.smoothedPitch = null; pitchHistory = [];
+        }
+
+        window.onload = () => {
+            renderPiano();
+            document.getElementById('base-note').value = 'C';
+            document.getElementById('base-octave').value = '2';
+            
+            // Enlazar los textos de la interfaz desde el inicio (sin depender del motor de audio)
+            document.getElementById('bpm-slider').addEventListener('input', (e) => document.getElementById('bpm-display').innerText = e.target.value);
+            document.getElementById('play-offset').addEventListener('input', (e) => document.getElementById('offset-val').innerText = e.target.value);
+            
+            const volSlider = document.getElementById('master-volume');
+            const volDisplay = document.getElementById('vol-display');
+            if (volSlider) {
+                volSlider.addEventListener('input', () => { 
+                    if (volDisplay) volDisplay.innerText = volSlider.value + '%';
+                    if (isAudioInitialized && masterGain) masterGain.gain.rampTo(parseFloat(volSlider.value) / 100, 0.1); 
+                });
+            }
+
+            setTimeout(addSeries, 200); 
+        };
     </script>
 </body>
 </html>
