@@ -39,7 +39,7 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
-        .digital-screen { background: #e0e7ff; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); border: 2px solid #c7d2fe; transition: background 0.3s, border-color 0.3s, box-shadow 0.3s; }
+        .digital-screen { background: #e0e7ff; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); border: 2px solid #c7d2fe; transition: background 0.3s; }
         .lcd-text { font-family: 'JetBrains Mono', monospace; letter-spacing: -0.5px; }
 
         /* MODO OSCURO GLOBAL SEGURO */
@@ -51,10 +51,7 @@
         html.dark .text-slate-500, html.dark .text-slate-400 { color: #94a3b8 !important; }
         html.dark .border-slate-200, html.dark .border-slate-100, html.dark .border-b, html.dark .border-t { border-color: #334155 !important; }
         
-        /* Afinador LCD Dark Mode */
         html.dark .digital-screen { background: #1e1b4b !important; border-color: #3730a3 !important; }
-        
-        /* Excepciones */
         html.dark #score-container { background-color: #fdfdf9 !important; border-color: #94a3b8 !important; }
         html.dark .piano-container { background-color: #fff !important; }
         html.dark .white-key { background: #fff !important; color: #94a3b8 !important; }
@@ -105,7 +102,7 @@
                     </div>
                     <div class="col-span-1">
                         <label for="num-harmonics" class="block text-[8px] text-slate-500 font-bold uppercase mb-1 cursor-pointer" title="Armónicos Iniciales">Parciales</label>
-                        <input type="number" id="num-harmonics" value="16" min="2" max="64" class="w-full border rounded p-1 text-xs text-center font-bold outline-none bg-slate-50 text-slate-800">
+                        <input type="number" id="num-harmonics" value="16" min="2" max="64" class="w-full border rounded p-1 text-xs text-center font-bold outline-none bg-slate-50 text-slate-800 dark:text-slate-100">
                     </div>
                 </div>
                 <button onclick="addSeries()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 rounded text-xs transition shadow-sm">
@@ -248,13 +245,13 @@
 
                 <section>
                     <h3 class="text-lg font-bold text-indigo-700 dark:text-indigo-400 border-b-2 border-indigo-100 dark:border-indigo-900/50 pb-2 mb-4 flex items-center gap-2">
-                        <span>⚖️</span> 2. El Choque: Naturaleza vs. Piano (Temperamento Igual)
+                        <span>⚖️</span> 2. Naturaleza vs. Piano (Temperamento Igual)
                     </h3>
                     <div class="space-y-3">
                         <p>Si analizas las tarjetas de la aplicación, notarás que algunos armónicos muestran números en rojo, como <span class="text-rose-500 font-bold">-31.2 c</span> (cents).</p>
                         <p><strong>¿Qué significan los Cents?</strong> Un "Cent" es la centésima parte de un semitono. Sirve para medir microscópicamente la afinación.</p>
-                        <p><strong>¿Por qué están desafinados?</strong> Hace siglos, los músicos se toparon con un problema matemático: afinar los instrumentos guiándose por los puros armónicos de la naturaleza impedía cambiar de tonalidad (escala) sin que sonara horrible. La solución fue inventar el <strong>Temperamento Igual</strong>, que es el estándar actual.</p>
-                        <p>En el Temperamento Igual, <em>todas las notas del piano se desafinan deliberadamente un poquito</em> para engañar al oído humano y permitir tocar en cualquier escala. Sin embargo, la naturaleza no miente: el armónico 5º, 7º y 11º revelan siempre grandes discrepancias entre la matemática pura acústica y la afinación de nuestro piano occidental.</p>
+                        <p><strong>¿Por qué están desafinados?</strong> Hace siglos, los músicos se toparon con un problema matemático: afinar los instrumentos guiándose por los puros armónicos de la naturaleza impedía cambiar de tonalidad sin que sonara horrible. La solución fue inventar el <strong>Temperamento Igual</strong>.</p>
+                        <p>En el Temperamento Igual, <em>todas las notas del piano se desafinan deliberadamente un poquito</em> para engañar al oído humano. Sin embargo, la naturaleza no miente: el armónico 5º, 7º y 11º revelan siempre grandes discrepancias entre la física pura y nuestro piano occidental.</p>
                     </div>
                 </section>
 
@@ -263,8 +260,7 @@
                         <span>🔬</span> 3. Microtonalismo: 1/4, 1/8, 1/16 y 1/32 de Tono
                     </h3>
                     <div class="space-y-3">
-                        <p>El piano occidental divide la música en <strong>semitonos</strong> (la distancia entre dos teclas contiguas). Un semitono equivale exactamente a <strong>100 Cents</strong>. Sin embargo, la serie armónica es un fenómeno natural y produce frecuencias que caen en las "grietas" entre las teclas del piano. A estas distancias se les llama intervalos <strong>microtonales</strong>.</p>
-                        <p>El laboratorio traduce instantáneamente esta desviación acústica en fracciones exactas de tono:</p>
+                        <p>El piano divide la música en <strong>semitonos</strong> (100 Cents). Sin embargo, la serie armónica produce frecuencias que caen en las "grietas" entre las teclas. A estas distancias se les llama intervalos <strong>microtonales</strong>.</p>
                         <div class="bg-indigo-50 dark:bg-indigo-900/30 p-3 rounded-lg border border-indigo-100 dark:border-indigo-800 text-xs text-slate-800 dark:text-indigo-100 grid grid-cols-1 md:grid-cols-2 gap-2 transition-colors">
                             <div class="flex justify-between border-b border-indigo-200 dark:border-indigo-800/50 pb-1"><strong>1 Semitono</strong> <span>100 cents (1/2 Tono)</span></div>
                             <div class="flex justify-between border-b border-indigo-200 dark:border-indigo-800/50 pb-1"><strong>Cuarto de tono</strong> <span>50 cents (1/4 Tono)</span></div>
@@ -272,36 +268,48 @@
                             <div class="flex justify-between border-b border-indigo-200 dark:border-indigo-800/50 pb-1"><strong>Dieciseisavo de tono</strong> <span>12.5 cents (1/16 Tono)</span></div>
                             <div class="flex justify-between"><strong>Treintaidosavo de tono</strong> <span>6.25 cents (1/32 Tono)</span></div>
                         </div>
-                        <div class="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg border border-blue-100 dark:border-blue-800 text-xs text-slate-800 dark:text-blue-100 transition-colors">
-                            <p><strong>Ejemplo Acústico:</strong> El armónico 11º casi siempre arrojará una desviación de <strong>-49 cents</strong>. Matemáticamente, esto significa que la naturaleza está pidiendo casi a la perfección un <em>1/4 de tono</em> más grave que la nota que marca el piano. El afinador y las tarjetas te mostrarán bajo los "cents" en qué mundo microtonal estás.</p>
+                    </div>
+                </section>
+
+                <section>
+                    <h3 class="text-lg font-bold text-indigo-700 dark:text-indigo-400 border-b-2 border-indigo-100 dark:border-indigo-900/50 pb-2 mb-4 flex items-center gap-2">
+                        <span>✨</span> 4. Consonancia vs. Disonancia (El Secreto de la Armonía)
+                    </h3>
+                    <div class="space-y-3">
+                        <p>En el laboratorio verás que cada tarjeta ahora clasifica el intervalo matemático con la nota fundamental. Esta clasificación no es un invento cultural, ¡nace de la física de la serie armónica!</p>
+                        
+                        <div class="bg-emerald-50 dark:bg-emerald-900/30 p-3 rounded-lg border border-emerald-100 dark:border-emerald-800 text-xs text-slate-800 dark:text-emerald-100 transition-colors">
+                            <p><strong>🟢 Consonancias Perfectas (Unísono, 8va, 5ta Justa):</strong> Son los primeros armónicos de la serie. Sus proporciones matemáticas son tan simples (1:1, 2:1, 3:2) que sus ciclos de onda se alinean constantemente. El cerebro las percibe con una estabilidad y pureza absolutas (reposo total).</p>
+                        </div>
+                        
+                        <div class="bg-teal-50 dark:bg-teal-900/30 p-3 rounded-lg border border-teal-100 dark:border-teal-800 text-xs text-slate-800 dark:text-teal-100 transition-colors">
+                            <p><strong>🔵 Consonancias Imperfectas (3ras y 6tas):</strong> Aparecen un poco más arriba en la serie (ej. 5:4). Sus ondas cooperan y suenan agradables, pero tienen un grado sutil de movimiento. Son el "color" emocional de la música (lo que hace que un acorde suene mayor o menor).</p>
+                        </div>
+
+                        <div class="bg-amber-50 dark:bg-amber-900/30 p-3 rounded-lg border border-amber-100 dark:border-amber-800 text-xs text-slate-800 dark:text-amber-100 transition-colors">
+                            <p><strong>🟡 La 4ta Justa (Disonancia Contextual):</strong> Físicamente tiene una proporción simple (4:3), pero acústicamente es inestable porque sugiere que la nota base no es la fundamental, sino la propia 4ta. Por eso, en armonía clásica, a menudo se trata como una disonancia que pide resolverse hacia una 3ra.</p>
+                        </div>
+
+                        <div class="bg-rose-50 dark:bg-rose-900/30 p-3 rounded-lg border border-rose-100 dark:border-rose-800 text-xs text-slate-800 dark:text-rose-100 transition-colors">
+                            <p><strong>🔴 Disonancias (2das, 7mas, Tritono):</strong> A medida que subimos a armónicos más altos, las proporciones se vuelven muy complejas (ej. 15:8). Sus ondas chocan creando "batimentos" (pulsaciones rápidas) que nuestro cerebro interpreta como tensión, fricción y deseo de resolución hacia una consonancia.</p>
                         </div>
                     </div>
                 </section>
 
                 <section>
                     <h3 class="text-lg font-bold text-indigo-700 dark:text-indigo-400 border-b-2 border-indigo-100 dark:border-indigo-900/50 pb-2 mb-4 flex items-center gap-2">
-                        <span>🕹️</span> 4. Manual de Uso del Laboratorio
+                        <span>🕹️</span> 5. Manual de Uso
                     </h3>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="bg-slate-50 dark:bg-slate-700/50 border dark:border-slate-600 p-4 rounded-lg transition-colors">
-                            <h4 class="font-bold text-slate-800 dark:text-slate-100 mb-2">Generador de Series</h4>
-                            <p class="text-xs mb-2">Elige la Nota, la Octava y cuántos Parciales calcular. Puedes agregar múltiples series de notas distintas para ver visualmente cómo se entrelazan o chocan sus frecuencias microtonales.</p>
+                            <h4 class="font-bold text-slate-800 dark:text-slate-100 mb-2">Generador e Interacción</h4>
+                            <p class="text-xs mb-2">Elige una nota y cantidad de parciales. Al tocar el piano, las tarjetas o reproducir, la Partitura VexFlow se iluminará geolocalizando las notas exactas que estás tocando.</p>
                         </div>
                         
                         <div class="bg-slate-50 dark:bg-slate-700/50 border dark:border-slate-600 p-4 rounded-lg transition-colors">
-                            <h4 class="font-bold text-slate-800 dark:text-slate-100 mb-2">Interacción Cromática</h4>
-                            <p class="text-xs mb-2">Cada serie obtiene un color único. Toca las tarjetas o el Piano. Si esa nota pertenece a tus series activas, verás iluminarse instantáneamente tanto la tecla como la cabeza exacta de la nota en el Pentagrama.</p>
-                        </div>
-
-                        <div class="bg-slate-50 dark:bg-slate-700/50 border dark:border-slate-600 p-4 rounded-lg transition-colors">
                             <h4 class="font-bold text-slate-800 dark:text-slate-100 mb-2">Motor de Canon (Desfase)</h4>
-                            <p class="text-xs mb-2">Si configuras el <strong>Desfase</strong> mayor a 0 y presionas <em>Reproducir Todas</em>, las series iniciarán escalonadamente. Si varias series coinciden en la misma nota del pentagrama a la vez, el motor SVG creará un gradiente radiante combinando todos los colores involucrados en tiempo real.</p>
-                        </div>
-
-                        <div class="bg-slate-50 dark:bg-slate-700/50 border dark:border-slate-600 p-4 rounded-lg transition-colors">
-                            <h4 class="font-bold text-slate-800 dark:text-slate-100 mb-2">Afinador Histerético YIN</h4>
-                            <p class="text-xs mb-2">Usa el modo <strong>Micrófono</strong>, canta e intenta igualar un armónico "rojo". El algoritmo <em>Median Filter</em> ignora saltos de ruido para darte una aguja hiper-estable que te dirá exactamente a qué fracción microtonal estás cantando.</p>
+                            <p class="text-xs mb-2">Si configuras el <strong>Desfase</strong> y reproduces varias series a la vez, el motor creará un gradiente radiante en la partitura combinando colores si las notas chocan simultáneamente.</p>
                         </div>
                     </div>
                 </section>
@@ -319,13 +327,9 @@
         const VF = Vex.Flow;
         const A4_FREQ = 440;
         let activeSeries = [];
-        let synth, masterGain, audioContext;
+        let synth, masterGain, audioContext, chimeSynth;
         let seriesIdCounter = 0;
-        
-        // Variables para el Timbre Perfecto
-        let chimeSynth;
-        let isPerfectTuning = false;
-        let lastChimeTime = 0;
+        let resizeTimeout;
         
         const seriesColors = ['#ec4899', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4'];
         const baseFrequencies = { 'C': 16.35, 'C#': 17.32, 'D': 18.35, 'D#': 19.45, 'E': 20.60, 'F': 21.83, 'F#': 23.12, 'G': 24.50, 'G#': 25.96, 'A': 27.50, 'A#': 29.14, 'B': 30.87 };
@@ -344,6 +348,7 @@
             return { name: noteNames[num % 12], octave: octave, fullName: `${noteNames[num % 12]}${octave}`, midiNum: num };
         }
 
+        // Traductor Microtonal
         function getMicrotonalLabel(cents) {
             const abs = Math.abs(cents);
             if (abs < 3.125) return "Exacto";
@@ -352,8 +357,37 @@
             else if (abs >= 9.375 && abs < 18.75) label = "1/16 tono";
             else if (abs >= 18.75 && abs < 37.5) label = "1/8 tono";
             else label = "1/4 tono";
-            
             return (cents > 0 ? "+" : "-") + label;
+        }
+
+        // Motor de Clasificación de Intervalos (Consonancia vs Disonancia)
+        function getIntervalInfo(fundamentalMidi, harmonicMidi) {
+            const diff = (harmonicMidi - fundamentalMidi) % 12;
+            const intervals = [
+                { name: "8va", type: "Cons. Perfecta", color: "text-emerald-600 dark:text-emerald-400" }, // 0
+                { name: "2da m", type: "Disonancia", color: "text-rose-500 dark:text-rose-400" }, // 1
+                { name: "2da M", type: "Disonancia", color: "text-rose-500 dark:text-rose-400" }, // 2
+                { name: "3ra m", type: "Cons. Imperfecta", color: "text-teal-600 dark:text-teal-400" }, // 3
+                { name: "3ra M", type: "Cons. Imperfecta", color: "text-teal-600 dark:text-teal-400" }, // 4
+                { name: "4ta J", type: "Dis. Contextual", color: "text-amber-500 dark:text-amber-400" }, // 5
+                { name: "Tritono", type: "Disonancia", color: "text-red-600 dark:text-red-500 font-bold" }, // 6
+                { name: "5ta J", type: "Cons. Perfecta", color: "text-emerald-600 dark:text-emerald-400" }, // 7
+                { name: "6ta m", type: "Cons. Imperfecta", color: "text-teal-600 dark:text-teal-400" }, // 8
+                { name: "6ta M", type: "Cons. Imperfecta", color: "text-teal-600 dark:text-teal-400" }, // 9
+                { name: "7ma m", type: "Disonancia", color: "text-orange-500 dark:text-orange-400" }, // 10
+                { name: "7ma M", type: "Disonancia", color: "text-rose-600 dark:text-rose-500" } // 11
+            ];
+            
+            let name = intervals[diff].name;
+            let type = intervals[diff].type;
+            let color = intervals[diff].color;
+
+            if (diff === 0 && fundamentalMidi === harmonicMidi) {
+                name = "Unísono";
+                type = "Cons. Perfecta";
+            }
+            
+            return { name: name, type: type, css: color };
         }
 
         let isAudioInitialized = false;
@@ -367,9 +401,9 @@
                 internalAnalyser = audioContext.createAnalyser();
                 internalAnalyser.fftSize = 2048;
                 
-                // Limitador de seguridad para evitar saturación de audio
+                // Limitador para evitar distorsión con múltiples series
                 masterGain = new Tone.Gain(0.8);
-                const limiter = new Tone.Limiter(-2).toDestination();
+                const limiter = new Tone.Limiter(-1).toDestination();
                 masterGain.connect(limiter);
                 
                 synth = new Tone.PolySynth(Tone.Synth, {
@@ -389,9 +423,7 @@
                 document.getElementById('waveform').addEventListener('change', (e) => synth.set({ oscillator: { type: e.target.value } }));
                 
                 const volSlider = document.getElementById('master-volume');
-                if (volSlider) {
-                    masterGain.gain.value = parseFloat(volSlider.value) / 100;
-                }
+                if (volSlider) masterGain.gain.value = parseFloat(volSlider.value) / 100;
                 
                 isAudioInitialized = true;
             }
@@ -399,6 +431,8 @@
 
         function calculateHarmonics(fundamentalFreq, count, currentSeriesId) {
             const harmonics = [];
+            const closestFundMidi = Math.round(frequencyToMidi(fundamentalFreq));
+
             for (let i = 1; i <= count; i++) {
                 const freq = fundamentalFreq * i;
                 const midiExact = frequencyToMidi(freq);
@@ -410,10 +444,14 @@
                 if (Math.abs(cents) > 10) colorClass = "text-blue-500";
                 if (Math.abs(cents) > 25) colorClass = "text-rose-500";
 
+                // Obtenemos la clasificación del intervalo
+                const intervalData = getIntervalInfo(closestFundMidi, closestMidi);
+
                 harmonics.push({
                     index: i, freq: freq, cents: cents, note: noteInfo.name,
                     octave: noteInfo.octave, fullName: noteInfo.fullName,
                     colorClass: colorClass,
+                    interval: intervalData,
                     id: `vf-id-${currentSeriesId}-${i}`, 
                     seriesId: currentSeriesId
                 });
@@ -454,7 +492,7 @@
             const scoreContainer = document.getElementById('score-container');
             scoreContainer.innerHTML = ''; 
             
-            window.vfNoteMap = {}; // Limpiamos el mapa de memoria
+            window.vfNoteMap = {};
             
             if (activeSeries.length === 0) return;
             
@@ -484,7 +522,6 @@
             
             renderer.resize(finalWidth, finalHeight);
             
-            // MAGIA PARA EVITAR EL SCROLL: SVG viewBox Adaptativo
             const svgEl = scoreContainer.querySelector('svg');
             if(svgEl) {
                 svgEl.setAttribute('viewBox', `0 0 ${finalWidth} ${finalHeight}`);
@@ -538,7 +575,7 @@
                     if (n.acc) chord.addModifier(new VF.Accidental(n.acc), idx);
                 });
                 
-                chord._logicalNotes = unique; 
+                chord._logicalNotes = unique;
                 return chord;
             }
 
@@ -579,7 +616,6 @@
             if (needsTreble) formatAndDraw(trebleNotes, 'treble');
             if (needsBass) formatAndDraw(bassNotes, 'bass');
 
-            // --- EL MAPEO ESPACIAL POST-DIBUJO ---
             const domNotes = document.querySelectorAll('#score-container .vf-stavenote');
             let domIndex = 0;
             
@@ -740,7 +776,7 @@
                             </div>
                         </div>
                         <div class="flex items-center gap-1.5 ml-auto">
-                            <div class="flex items-center bg-white dark:bg-slate-700 border rounded px-1 shadow-sm h-6">
+                            <div class="flex items-center bg-slate-50 dark:bg-slate-700 border rounded px-1 shadow-sm h-6">
                                 <span class="text-[8px] text-slate-400 uppercase font-bold mr-1">Parciales</span>
                                 <input type="number" min="2" max="64" value="${series.harmonics.length}" 
                                        class="w-8 text-center text-[9px] font-bold outline-none bg-transparent text-slate-800 dark:text-slate-100"
@@ -757,14 +793,20 @@
                 series.harmonics.forEach((h) => {
                     const microLabel = getMicrotonalLabel(h.cents);
                     html += `
-                        <div id="card-${h.id}" class="flex-shrink-0 w-[56px] bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded p-1 text-center relative cursor-pointer transition-all duration-100"
+                        <div id="card-${h.id}" class="flex-shrink-0 w-[56px] bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded p-1 text-center relative cursor-pointer transition-all duration-100 flex flex-col justify-between"
                              onclick="playTone(${h.freq}, 0.5); window.triggerHighlight('${h.id}', '${series.color}', 600, '${h.fullName}')">
-                            <div class="absolute -top-1 -left-1 w-3.5 h-3.5 rounded-full text-[7px] flex items-center justify-center text-white font-bold" style="background-color: ${series.color}">${h.index}</div>
-                            <div class="font-bold text-[10px] mt-1 text-slate-800 dark:text-slate-200">${h.note}<sup>${h.octave}</sup></div>
-                            <div class="text-[7px] text-slate-400 font-mono">${h.freq.toFixed(1)}Hz</div>
-                            <div class="text-[8px] font-bold ${h.colorClass} mt-0.5 leading-tight">
-                                ${h.cents > 0 ? '+' : ''}${h.cents.toFixed(1)}c
-                                <div class="text-[6.5px] opacity-80 mt-0.5">${microLabel}</div>
+                            <div>
+                                <div class="absolute -top-1 -left-1 w-3.5 h-3.5 rounded-full text-[7px] flex items-center justify-center text-white font-bold shadow-sm" style="background-color: ${series.color}">${h.index}</div>
+                                <div class="font-bold text-[10px] mt-1 text-slate-800 dark:text-slate-200">${h.note}<sup>${h.octave}</sup></div>
+                                <div class="text-[7px] text-slate-400 font-mono">${h.freq.toFixed(1)}Hz</div>
+                                <div class="text-[8px] font-bold ${h.colorClass} mt-0.5 leading-tight">
+                                    ${h.cents > 0 ? '+' : ''}${h.cents.toFixed(1)}c
+                                    <div class="text-[6.5px] opacity-80 mt-0.5">${microLabel}</div>
+                                </div>
+                            </div>
+                            <div class="mt-1 pt-0.5 border-t border-slate-100 dark:border-slate-700 leading-none">
+                                <div class="text-[7px] font-bold ${h.interval.css}">${h.interval.name}</div>
+                                <div class="text-[5px] uppercase opacity-75 ${h.interval.css}" style="letter-spacing: -0.2px">${h.interval.type}</div>
                             </div>
                         </div>
                     `;
@@ -822,11 +864,10 @@
             }
         }
 
-        let resizeTimer;
         window.addEventListener('resize', () => { 
-            clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(() => {
-                if (activeSeries.length > 0) renderVexFlow(); 
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                if (activeSeries.length > 0) renderVexFlow();
             }, 200);
         });
 
@@ -883,10 +924,12 @@
         let isTuning = false;
         let internalTunerFreq = 0;
         let yinBuffer = new Float32Array(2048);
-        let sharedInputBuffer = null; // Memory Optimization
+        let sharedInputBuffer = null; 
         let pitchHistory = [];
         let silenceFrames = 0;
         window.smoothedPitch = null;
+        let isPerfectTuning = false;
+        let lastChimeTime = 0;
 
         window.setTunerSource = function(src) {
             tunerMode = src;
@@ -958,7 +1001,7 @@
                 }
                 let tauEstimate = -1;
                 for (let tau = 2; tau < yinBuffer.length; tau++) {
-                    if (yinBuffer[tau] < 0.08) { // YIN Threshold ajustado a cuerdas (0.08)
+                    if (yinBuffer[tau] < 0.08) { 
                         while (tau + 1 < yinBuffer.length && yinBuffer[tau + 1] < yinBuffer[tau]) tau++;
                         tauEstimate = tau; break;
                     }
@@ -1007,16 +1050,14 @@
             
             document.getElementById('tuner-microtone').innerText = getMicrotonalLabel(centsOffset);
             
-            // --- LÓGICA DE TIMBRE (DING) PARA AFINACIÓN PERFECTA ---
+            // Lógica de Timbre (Ding)
             const now = performance.now();
-            if (Math.abs(centsOffset) <= 2.5) { // Rango de afinación perfecta (menos de 2.5 cents)
-                if (!isPerfectTuning && (now - lastChimeTime > 1500)) { // Cooldown de 1.5s
+            if (Math.abs(centsOffset) <= 2.5) {
+                if (!isPerfectTuning && (now - lastChimeTime > 1500)) { 
                     isPerfectTuning = true;
                     lastChimeTime = now;
-                    
                     if (chimeSynth) chimeSynth.triggerAttackRelease("C6", "16n", Tone.now(), 0.15);
                     
-                    // Efecto visual (destello)
                     const lcdScreen = document.querySelector('.digital-screen');
                     if (lcdScreen) {
                         lcdScreen.style.setProperty('box-shadow', '0 0 15px #34d399, inset 0 2px 4px rgba(0,0,0,0.1)', 'important');
@@ -1028,7 +1069,6 @@
                     }
                 }
             } else if (Math.abs(centsOffset) > 8) {
-                // Histéresis: Solo permite volver a sonar si te alejas más de 8 cents
                 isPerfectTuning = false;
             }
         }
@@ -1045,10 +1085,7 @@
 
         window.onload = () => {
             renderPiano();
-            document.getElementById('base-note').value = 'C';
-            document.getElementById('base-octave').value = '2';
             
-            // Enlazar los textos de la interfaz desde el inicio (sin depender del motor de audio)
             document.getElementById('bpm-slider').addEventListener('input', (e) => document.getElementById('bpm-display').innerText = e.target.value);
             document.getElementById('play-offset').addEventListener('input', (e) => document.getElementById('offset-val').innerText = e.target.value);
             
@@ -1061,6 +1098,8 @@
                 });
             }
 
+            document.getElementById('base-note').value = 'C';
+            document.getElementById('base-octave').value = '2';
             setTimeout(addSeries, 200); 
         };
     </script>
